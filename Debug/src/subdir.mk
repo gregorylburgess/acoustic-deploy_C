@@ -4,13 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/acousicDeploy_C.cpp 
+../src/Bathy.cpp \
+../src/Grid.cpp \
+../src/acousticDeploy_C.cpp 
 
 OBJS += \
-./src/acousicDeploy_C.o 
+./src/Bathy.o \
+./src/Grid.o \
+./src/acousticDeploy_C.o 
 
 CPP_DEPS += \
-./src/acousicDeploy_C.d 
+./src/Bathy.d \
+./src/Grid.d \
+./src/acousticDeploy_C.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

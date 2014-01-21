@@ -7,6 +7,5 @@
 //============================================================================
 
 #include <iostream>
-#include <Grid.cpp>
 using namespace std;
 
