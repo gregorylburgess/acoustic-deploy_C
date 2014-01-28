@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <Grid.h>
+#include "Grid.h"
 
 Grid::Grid() {
 	rows = 0;

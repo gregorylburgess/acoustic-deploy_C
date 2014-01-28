@@ -1,3 +1,5 @@
+
+
 class Grid {
 	public:
 		int rows, cols;

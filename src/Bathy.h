@@ -1,5 +1,5 @@
 //============================================================================
-// Name        : acousicDeploy_C.cpp
+// Name        : acousticDeploy_C.cpp
 // Author      : Greg Burgess
 // Version     : 1.0
 // Copyright   : Your copyright notice
@@ -7,9 +7,13 @@
 //============================================================================
 
 #include <iostream>
-using namespace std;
+#include <netcdf.h>
+#include "Grid.h"
+#include "Utility.h"
 
-int main() {
-	cout << "!!!Hello World!!!" << endl;
-	return 0;
-}
+
+Grid simulatetopographyGrid(int XDist, int YDist);
+Grid getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug);
+
+
+
