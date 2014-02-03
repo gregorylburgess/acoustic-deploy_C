@@ -12,8 +12,12 @@
 #include "Utility.h"
 using namespace std;
 
-void printError(string msg, long timestamp) {
-	cout << msg << " " << timestamp;
+void printError(string msg, int errcode, long timestamp) {
+	if (errcode)
+		cout << msg << " \nError Code: " << errcode ;
+	else
+		cout << msg << " ";
+	exit(1);
 }
 
 double* seq(double start, double end, int size) {
