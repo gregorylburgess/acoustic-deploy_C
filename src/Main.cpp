@@ -3,15 +3,13 @@
 
 int main()
 {
-	cout<<"Start\n";
-
 	string inputFile = "himbsyn.bathytopo.1km.v19.grd",
 		   inputFileType="netcdf",
 		   seriesName="z";
-	int startX = 500,
-	    startY = 400,
-	    XDist = 30,
-	    YDist = 30;
+	int startX = 700,
+	    startY = 800,
+	    XDist = 100,
+	    YDist = 100;
 	long timestamp = -1;
 	bool debug = false;
 

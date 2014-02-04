@@ -7,11 +7,12 @@
 //============================================================================
 
 #include <iostream>
-#include <string>
+#include <string.h>
 #include <netcdf.h>
 #include <stdlib.h>
 #include <cmath>
 #include <math.h>
+#include <vector>
 #include "Grid.h"
 #include "Utility.h"
 #define _USE_MATH_DEFINES
@@ -34,45 +35,42 @@ Grid simulatetopographyGrid(int XDist, int YDist) {
 }
 
 Grid getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug) {
-	Grid topographyGrid;
-	if(startX < 1 || startY < 1) {
-		printError("topographyGrid x and y coordinates must be integers greater than 0.", 0, timestamp);
-	}
-	if(inputFileType == "netcdf"){
+	Grid topographyGrid = new Grid(XDist, YDist);
+	if(strcmp(inputFileType.c_str(),"netcdf") == 0){
 		// grab a slice (in grid form)
 
 	   // This will be the netCDF ID for the file and data variable.
-	   int ncid, varid, data_in[XDist][YDist];
+	   int ncid, varid;
 
 	   // Loop indexes, and error handling.
-	   int x, y, retval;
-
+	   int retval;
 	   // Open the file. NC_NOWRITE tells netCDF we want read-only access to the file.
 	   if ((retval = nc_open(inputFile.c_str(), NC_NOWRITE, &ncid))) {
 		   printError("ERROR: Can't open NetCDF File; check your inputFile.", retval, timestamp);
 	   }
-	   cout << "Opened File";
 
 	   // Get the varid of the data variable, based on its name.
 	   if ((retval = nc_inq_varid(ncid, seriesName.c_str(), &varid))) {
 		   printError("ERROR: Can't access variable id; check your seriesName.",retval, timestamp);
 	   }
-
 	   // Read the data.
-	   if ((retval = nc_get_var_int(ncid, varid, &data_in[0][0]))) {
+	   try {
+		   static size_t start[] = {startX,startY};
+		   static size_t range[] = {XDist,YDist};
+		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid.data);
+	   }
+	   catch (int i) {
 		   printError("ERROR: Error reading data.", retval, timestamp);
 	   }
-	   	   // Close the file, freeing all resources.
+	   // Close the file, freeing all resources.
 	   if ((retval = nc_close(ncid))) {
 		   cout << "ERROR: Error closing the file." << retval;
 	   }
-	   cout << "*** SUCCESS reading example file." <<  inputFile;
 	}
 
 	else if(inputFileType == "arcgis"){
 		// Read an ArcGIS file
 	}
-
 	else {
 		cout << "Bathymetry file not found.";
 		topographyGrid = simulatetopographyGrid(XDist,YDist);
@@ -83,8 +81,7 @@ Grid getBathy(string inputFile, string inputFileType, int startX, int startY, in
 		//print("Warning: NAs found in topographyGrid! setting to zero. This may be inappropriate so you may want to manually remove them.")
 	//	topographyGrid[is.na(topographyGrid)] <- 0
 	//}
-
-	//print(topographyGrid)
+	topographyGrid.printData();
     return(topographyGrid);
 }
 

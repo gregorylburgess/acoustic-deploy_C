@@ -1,8 +1,14 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
 #include <string.h>
+#include <netcdf.h>
+#include <stdlib.h>
+#include <iomanip>
+#include <cmath>
+#include <math.h>
+#include <vector>
 #include "Grid.h"
-
+using namespace std;
 Grid::Grid() {
 	rows = 0;
 	cols = 0;
@@ -12,7 +18,7 @@ Grid::Grid() {
 /**
  * Creates a Grid of a given size, initialized to zero.
  */
-Grid::Grid(int Rows, int Cols) {
+Grid::Grid(int Cols, int Rows) {
 	rows = Rows;
 	cols = Cols;
 	data = (double*) calloc(sizeof(double), rows * cols);
@@ -35,4 +41,15 @@ Grid::Grid(Grid* mat) {
 Grid::~Grid() {
 	delete data;
 }
-
+/**
+ * Prints the contents of the data array.
+ */
+void Grid::printData() {
+	std::cout << std::fixed;
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			cout << setprecision(3)<<data[(i * cols) + j] << "\t";
+		}
+		cout << "\n";
+	}
+}

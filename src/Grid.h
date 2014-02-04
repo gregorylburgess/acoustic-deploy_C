@@ -1,5 +1,3 @@
-
-
 class Grid {
 	public:
 		int rows, cols;
@@ -8,4 +6,5 @@ class Grid {
 		Grid(int Rows, int Cols);
 		Grid(Grid* mat);
 		~Grid();
+		void printData();
 };
