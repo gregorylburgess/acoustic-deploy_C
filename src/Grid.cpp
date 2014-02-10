@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <string.h>
 #include <netcdf.h>
 #include <stdlib.h>
@@ -36,12 +37,6 @@ Grid::Grid(Grid* mat) {
 }
 
 /**
- * Destroys a Grid.
- */
-Grid::~Grid() {
-	delete data;
-}
-/**
  * Prints the contents of the data array.
  */
 void Grid::printData() {
@@ -52,4 +47,20 @@ void Grid::printData() {
 		}
 		cout << "\n";
 	}
+}
+
+/**
+ * Writes the data value to a text file, inverting the rows (for GPUplot).
+ */
+void Grid::GNUwrite(string filename) {
+	ofstream out;
+	out.open(filename.c_str());
+	for (int i=rows; i>0; i--) {
+		for (int j=0; j<cols; j++) {
+			out << setprecision(3)<<data[(i * cols) + j] << " ";
+		}
+		out << "\r\n";
+	}
+
+	out.close();
 }

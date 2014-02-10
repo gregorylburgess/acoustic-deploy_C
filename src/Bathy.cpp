@@ -20,17 +20,20 @@ using namespace std;
 
 
 Grid simulatetopographyGrid(int XDist, int YDist) {
-	long size = XDist * sizeof(double);
+	cout<<"Simulating";
 	Grid topographyGrid = new Grid(XDist, YDist);
 	double* data = topographyGrid.data;
-	double* ref = (double*)malloc(size);
+	double* refx = seq(-2*M_PI, 2*M_PI, XDist);
+	double* refy = seq(-2*M_PI, 2*M_PI, YDist);
 	int i = 0;
+	cout<<"Calculating";
 	for(int x = 0; x< XDist; x++) {
 		for(int y = 0; y< XDist; y++) {
 			i++;
-			data[i] = ref[x] * ref[y] * abs(ref[x]) * abs(ref[y]) - M_PI;
+			data[i] = refx[x] * refy[y] * abs(refx[x]) * abs(refy[y]) - M_PI;
 		}
 	}
+	cout<<"Returning";
 	return(topographyGrid);
 }
 
@@ -55,8 +58,8 @@ Grid getBathy(string inputFile, string inputFileType, int startX, int startY, in
 	   }
 	   // Read the data.
 	   try {
-		   static size_t start[] = {startX,startY};
-		   static size_t range[] = {XDist,YDist};
+		   static size_t start[] = {startX, startY};
+		   static size_t range[] = {XDist, YDist};
 		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid.data);
 	   }
 	   catch (int i) {
@@ -72,15 +75,10 @@ Grid getBathy(string inputFile, string inputFileType, int startX, int startY, in
 		// Read an ArcGIS file
 	}
 	else {
-		cout << "Bathymetry file not found.";
+		cout << "Bathymetry file type not supported.  Simulating Bathymetry";
 		topographyGrid = simulatetopographyGrid(XDist,YDist);
 	}
 
-	// Quick fix to get rid of NA in topographyGrid, should probably be interpolated (or something)
-	//if(any(is.na(topographyGrid))){
-		//print("Warning: NAs found in topographyGrid! setting to zero. This may be inappropriate so you may want to manually remove them.")
-	//	topographyGrid[is.na(topographyGrid)] <- 0
-	//}
 	topographyGrid.printData();
     return(topographyGrid);
 }

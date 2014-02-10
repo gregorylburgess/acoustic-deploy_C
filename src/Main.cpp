@@ -1,10 +1,14 @@
 
 #include "Bathy.h"
+#include "Utility.h"
+#include <stdlib.h>
+#include <iostream>
+#include <string>
+using namespace std;
 
-int main()
-{
+int main() {
 	string inputFile = "himbsyn.bathytopo.1km.v19.grd",
-		   inputFileType="netcdf",
+		   inputFileType="a",
 		   seriesName="z";
 	int startX = 700,
 	    startY = 800,
@@ -14,6 +18,18 @@ int main()
 	bool debug = false;
 
 	Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
+	//Grid tGrid = simulatetopographyGrid(XDist,YDist);
+	//tGrid.printData();
+
+	string  title = "test",
+	dataFilePath = "data/test.dat",
+	deepHexColor = "#000066",
+	shallowHexColor = "#ffffff";
+	int width = 500,
+		height = 500;
+	tGrid.GNUwrite(dataFilePath);
+	printGraph(title, XDist,YDist, dataFilePath, width, height, deepHexColor, shallowHexColor);
+	cout << "Done";
 }
 /*
    #include <unistd.h>

@@ -1,3 +1,4 @@
+#include <string>
 class Grid {
 	public:
 		int rows, cols;
@@ -5,6 +6,6 @@ class Grid {
 		Grid();
 		Grid(int Rows, int Cols);
 		Grid(Grid* mat);
-		~Grid();
 		void printData();
+		void GNUwrite(std::string filename);
 };
