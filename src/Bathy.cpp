@@ -40,13 +40,9 @@ Grid simulatetopographyGrid(int XDist, int YDist) {
 Grid getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug) {
 	Grid topographyGrid = new Grid(XDist, YDist);
 	if(strcmp(inputFileType.c_str(),"netcdf") == 0){
-		// grab a slice (in grid form)
-
 	   // This will be the netCDF ID for the file and data variable.
-	   int ncid, varid;
+	   int ncid, varid, retval;
 
-	   // Loop indexes, and error handling.
-	   int retval;
 	   // Open the file. NC_NOWRITE tells netCDF we want read-only access to the file.
 	   if ((retval = nc_open(inputFile.c_str(), NC_NOWRITE, &ncid))) {
 		   printError("ERROR: Can't open NetCDF File; check your inputFile.", retval, timestamp);
@@ -67,19 +63,15 @@ Grid getBathy(string inputFile, string inputFileType, int startX, int startY, in
 	   }
 	   // Close the file, freeing all resources.
 	   if ((retval = nc_close(ncid))) {
-		   cout << "ERROR: Error closing the file." << retval;
+		   cout << "ERROR: Error closing the file." << retval << "\n";
 	   }
 	}
-
-	else if(inputFileType == "arcgis"){
-		// Read an ArcGIS file
-	}
 	else {
-		cout << "Bathymetry file type not supported.  Simulating Bathymetry";
+		cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
 		topographyGrid = simulatetopographyGrid(XDist,YDist);
 	}
-
-	topographyGrid.printData();
+	topographyGrid.clearNA(0);
+	//topographyGrid.printData();
     return(topographyGrid);
 }
 

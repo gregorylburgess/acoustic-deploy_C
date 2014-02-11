@@ -7,40 +7,33 @@
 using namespace std;
 
 int main() {
-	string inputFile = "himbsyn.bathytopo.1km.v19.grd",
-		   inputFileType="a",
+	string inputFile = "himbsyn.bathy.v19.grd",
+		   inputFileType="netcdf",
 		   seriesName="z";
-	int startX = 700,
-	    startY = 800,
-	    XDist = 100,
-	    YDist = 100;
+	int startX = 7000,
+	    startY = 7000,
+	    XDist = 3000,
+	    YDist = 3000;
 	long timestamp = -1;
 	bool debug = false;
 
 	Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
 	//Grid tGrid = simulatetopographyGrid(XDist,YDist);
-	//tGrid.printData();
 
 	string  title = "test",
-	dataFilePath = "data/test.dat",
-	deepHexColor = "#000066",
-	shallowHexColor = "#ffffff";
+	dataFilePath = "data/test.dat";
 	int width = 500,
 		height = 500;
+	//tGrid.printData();
 	tGrid.GNUwrite(dataFilePath);
-	printGraph(title, XDist,YDist, dataFilePath, width, height, deepHexColor, shallowHexColor);
-	cout << "Done";
+	cout << "Printing" << "\n";
+	try {
+		printGraph(title, XDist,YDist, dataFilePath, width, height);
+	}
+	catch(int e) {
+		return 0;
+	}
+	cout << "Done" << "\n";
+	return 0;
 }
-/*
-   #include <unistd.h>
-   #include <stdio.h>
-   #include <errno.h>
 
-   int main() {
-       char cwd[1024];
-       if (getcwd(cwd, sizeof(cwd)) != NULL)
-           fprintf(stdout, "Current working dir: %s\n", cwd);
-       else
-           perror("getcwd() error");
-       return 0;
-   }*/

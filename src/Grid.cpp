@@ -36,6 +36,16 @@ Grid::Grid(Grid* mat) {
 	data = (double*) memcpy(malloc(size), matrix.data, size);
 }
 
+void Grid::clearNA(double val) {
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			if(isnan(data[(i * cols) + j])){
+				data[(i * cols) + j] = 0;
+			}
+		}
+		cout << "\n";
+	}
+}
 /**
  * Prints the contents of the data array.
  */
@@ -55,7 +65,7 @@ void Grid::printData() {
 void Grid::GNUwrite(string filename) {
 	ofstream out;
 	out.open(filename.c_str());
-	for (int i=rows; i>0; i--) {
+	for (int i=0; i<rows; i++) {
 		for (int j=0; j<cols; j++) {
 			out << setprecision(3)<<data[(i * cols) + j] << " ";
 		}
