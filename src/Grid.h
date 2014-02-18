@@ -1,12 +1,20 @@
 #include <string>
+using namespace std;
+
+/**
+ * Represents a matrix of data.
+ */
 class Grid {
 	public:
 		int rows, cols;
 		double* data;
+		string name;
+
 		Grid();
-		Grid(int Rows, int Cols);
+		Grid(int Cols, int Rows, string Name);
 		Grid(Grid* mat);
 		void clearNA(double val);
 		void printData();
-		void GNUwrite(std::string filename);
+		void writeMat();
+		void writeDat();
 };

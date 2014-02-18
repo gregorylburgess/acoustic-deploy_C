@@ -21,7 +21,7 @@ using namespace std;
 
 Grid simulatetopographyGrid(int XDist, int YDist) {
 	cout<<"Simulating";
-	Grid topographyGrid = new Grid(XDist, YDist);
+	Grid topographyGrid = new Grid(XDist, YDist, "Topography");
 	double* data = topographyGrid.data;
 	double* refx = seq(-2*M_PI, 2*M_PI, XDist);
 	double* refy = seq(-2*M_PI, 2*M_PI, YDist);
@@ -38,7 +38,7 @@ Grid simulatetopographyGrid(int XDist, int YDist) {
 }
 
 Grid getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug) {
-	Grid topographyGrid = new Grid(XDist, YDist);
+	Grid topographyGrid = new Grid(XDist, YDist, "Topography");
 	if(strcmp(inputFileType.c_str(),"netcdf") == 0){
 	   // This will be the netCDF ID for the file and data variable.
 	   int ncid, varid, retval;

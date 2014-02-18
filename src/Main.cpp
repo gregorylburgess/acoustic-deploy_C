@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string>
+#include "Graph.h"
 using namespace std;
 
 int main() {
@@ -16,19 +17,31 @@ int main() {
 	    YDist = 3000;
 	long timestamp = -1;
 	bool debug = false;
-
-	Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
 	//Grid tGrid = simulatetopographyGrid(XDist,YDist);
+	Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
+	Grid hGrid = new Grid(XDist, YDist, "Habitat");
+	Grid gGrid = new Grid(XDist, YDist, "Goodness");
+	Grid cGrid = new Grid(XDist, YDist, "Coverage");
 
-	string  title = "test",
-	dataFilePath = "data/test.dat";
+
 	int width = 500,
 		height = 500;
-	//tGrid.printData();
-	tGrid.GNUwrite(dataFilePath);
-	cout << "Printing" << "\n";
+	string  bathymetryTitle = "Topography",
+			bathymetryFilePath = "data/Topography.dat",
+			habitatTitle = "Habitat",
+			habitatFilePath = "data/Habitat.dat",
+			goodnessTitle = "Goodness",
+			goodnessFilePath = "data/Goodness.dat",
+			coverageTitle = "Acoustic Coverage",
+			coverageFilePath = "data/Coverage.dat";
+
+	tGrid.writeMat();
+	tGrid.writeDat();
+	Graph tGraph = Graph(&tGrid);
+	int contourSize = 3;
+	int contours[] = {0,-500,-1000};
 	try {
-		printGraph(title, XDist,YDist, dataFilePath, width, height);
+		tGraph.printContour(contours, contourSize);
 	}
 	catch(int e) {
 		return 0;

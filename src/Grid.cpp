@@ -10,19 +10,22 @@
 #include <vector>
 #include "Grid.h"
 using namespace std;
+
 Grid::Grid() {
 	rows = 0;
 	cols = 0;
 	data = NULL;
+	name = "";
 }
 
 /**
  * Creates a Grid of a given size, initialized to zero.
  */
-Grid::Grid(int Cols, int Rows) {
+Grid::Grid(int Cols, int Rows, string Name) {
 	rows = Rows;
 	cols = Cols;
 	data = (double*) calloc(sizeof(double), rows * cols);
+	name = Name;
 }
 
 /**
@@ -32,10 +35,14 @@ Grid::Grid(Grid* mat) {
 	Grid matrix = *mat;
 	rows = matrix.rows;
 	cols = matrix.cols;
+	name = matrix.name;
 	long size = sizeof(double) * matrix.rows * matrix.cols;
 	data = (double*) memcpy(malloc(size), matrix.data, size);
 }
 
+/**
+ * Replaces NA values in the grid with the given value.
+ */
 void Grid::clearNA(double val) {
 	for (int i=0; i<rows; i++) {
 		for (int j=0; j<cols; j++) {
@@ -60,14 +67,30 @@ void Grid::printData() {
 }
 
 /**
- * Writes the data value to a text file, inverting the rows (for GPUplot).
+ * Writes the data value to a text file as a matrix (.mat).
  */
-void Grid::GNUwrite(string filename) {
+void Grid::writeMat() {
 	ofstream out;
-	out.open(filename.c_str());
+	out.open(("data/" + name + ".mat").c_str());
 	for (int i=0; i<rows; i++) {
 		for (int j=0; j<cols; j++) {
 			out << setprecision(3)<<data[(i * cols) + j] << " ";
+		}
+		out << "\r\n";
+	}
+
+	out.close();
+}
+
+/**
+ * Writes the data value to a data file (.dat), as a list of x,y,z points.
+ */
+void Grid::writeDat() {
+	ofstream out;
+	out.open(("data/" + name + ".dat").c_str());
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			out << setprecision(3) << j << " " << i << " " << data[(i * cols) + j] << "\r\n";
 		}
 		out << "\r\n";
 	}
