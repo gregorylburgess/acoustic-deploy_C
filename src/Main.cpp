@@ -1,6 +1,7 @@
 
 #include "Bathy.h"
 #include "Utility.h"
+#include <unordered_map>
 #include <stdlib.h>
 #include <iostream>
 #include <string>
@@ -8,6 +9,7 @@
 using namespace std;
 
 int main() {
+	unordered_map <string, double> params;
 	string inputFile = "himbsyn.bathy.v19.grd",
 		   inputFileType="netcdf",
 		   seriesName="z";

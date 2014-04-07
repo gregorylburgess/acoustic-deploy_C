@@ -44,9 +44,11 @@ Grid::Grid(Grid* mat) {
  * Replaces NA values in the grid with the given value.
  */
 void Grid::clearNA(double val) {
+	double tempVal = 0;
 	for (int i=0; i<rows; i++) {
 		for (int j=0; j<cols; j++) {
-			if(isnan(data[(i * cols) + j])){
+			val = data[(i * cols) + j];
+			if(std::isnan(tempVal)){
 				data[(i * cols) + j] = 0;
 			}
 		}
@@ -96,4 +98,58 @@ void Grid::writeDat() {
 	}
 
 	out.close();
+}
+
+void Grid::replace(double find, double replace) {
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			if (data[(i * cols) + j] == find) {
+				data[(i * cols) + j] = replace;
+			}
+		}
+	}
+}
+
+void Grid::setAll(double val) {
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			data[(i * cols) + j] = val;
+		}
+	}
+}
+
+double Grid::min() {
+	double min = data[0];
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			if (data[(i * cols) + j] < min) {
+				min = data[(i * cols) + j];
+			}
+		}
+	}
+	return min;
+}
+
+double Grid::max() {
+	double max = data[0];
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			if (data[(i * cols) + j] > max) {
+				max = data[(i * cols) + j];
+			}
+		}
+	}
+	return max;
+}
+
+double Grid::sum() {
+	double sum = 0;
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			if (data[(i * cols) + j] > max) {
+				sum +=  data[(i * cols) + j];
+			}
+		}
+	}
+	return sum;
 }
