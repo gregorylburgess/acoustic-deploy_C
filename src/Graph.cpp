@@ -35,7 +35,6 @@ void Graph::printContour(int contourLevels[], int numLevels) {
 		   plot;
 
 	//Print to a table instead of a gif
-
 	plots.cmd(setOutput);
 	//Enable contour lines
 	plots.cmd(setContour);
@@ -50,7 +49,7 @@ void Graph::printContour(int contourLevels[], int numLevels) {
 	plots.cmd(cntrparam);
 	ss.str("");
 	ss.clear();
-	//Don't plot the map, jsut the contour lines
+	//Don't plot the map, just the contour lines
 	plots.cmd(noSurface);
 	//pm3d is required for contour lines
 	plots.cmd(pm3d);

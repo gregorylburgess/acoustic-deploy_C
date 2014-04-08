@@ -22,7 +22,7 @@ using namespace std;
 Grid simulatetopographyGrid(int XDist, int YDist) {
 	cout<<"Simulating";
 	Grid topographyGrid = new Grid(XDist, YDist, "Topography");
-	double* data = topographyGrid.data;
+	double* data = topographyGrid.data.data();
 	double* refx = seq(-2*M_PI, 2*M_PI, XDist);
 	double* refy = seq(-2*M_PI, 2*M_PI, YDist);
 	int i = 0;
@@ -56,7 +56,7 @@ Grid getBathy(string inputFile, string inputFileType, int startX, int startY, in
 	   try {
 		   static size_t start[] = {startX, startY};
 		   static size_t range[] = {XDist, YDist};
-		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid.data);
+		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid.data.data());
 	   }
 	   catch (int i) {
 		   printError("ERROR: Error reading data.", retval, timestamp);

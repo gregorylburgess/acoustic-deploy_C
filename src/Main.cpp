@@ -19,8 +19,9 @@ int main() {
 	    YDist = 3000;
 	long timestamp = -1;
 	bool debug = false;
-	//Grid tGrid = simulatetopographyGrid(XDist,YDist);
-	Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
+
+	//Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
+	Grid tGrid = simulatetopographyGrid(XDist,YDist);
 	Grid hGrid = new Grid(XDist, YDist, "Habitat");
 	Grid gGrid = new Grid(XDist, YDist, "Goodness");
 	Grid cGrid = new Grid(XDist, YDist, "Coverage");
@@ -46,6 +47,7 @@ int main() {
 		tGraph.printContour(contours, contourSize);
 	}
 	catch(int e) {
+		cout << "Error:" << e <<"\n";
 		return 0;
 	}
 	cout << "Done" << "\n";

@@ -1,4 +1,5 @@
 #include <string>
+#include <Dense> //Eigen/Dense
 using namespace std;
 
 /**
@@ -7,7 +8,7 @@ using namespace std;
 class Grid {
 	public:
 		int rows, cols;
-		double* data;
+		Eigen::MatrixXd data;
 		string name;
 
 		Grid();

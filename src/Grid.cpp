@@ -9,13 +9,14 @@
 #include <math.h>
 #include <vector>
 #include "Grid.h"
+#include <Dense>
 using namespace std;
 
 Grid::Grid() {
 	rows = 0;
 	cols = 0;
-	data = NULL;
 	name = "";
+	//data is already null-initialized by Eigen
 }
 
 /**
@@ -24,18 +25,19 @@ Grid::Grid() {
 Grid::Grid(int Cols, int Rows, string Name) {
 	rows = Rows;
 	cols = Cols;
-	data = (double*) calloc(sizeof(double), rows * cols);
+	data.resize(Rows,Cols);
+	data.Zero();
 	name = Name;
 }
 
 /**
  * Copies and returns a pointer to an existing Grid.
  */
-Grid::Grid(Grid* mat) {
+Grid::Grid(Grid* mat, string newName) {
 	Grid matrix = *mat;
 	rows = matrix.rows;
 	cols = matrix.cols;
-	name = matrix.name;
+	name = newName;
 	long size = sizeof(double) * matrix.rows * matrix.cols;
 	data = (double*) memcpy(malloc(size), matrix.data, size);
 }
@@ -44,16 +46,18 @@ Grid::Grid(Grid* mat) {
  * Replaces NA values in the grid with the given value.
  */
 void Grid::clearNA(double val) {
-	double tempVal = 0;
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			val = data[(i * cols) + j];
-			if(std::isnan(tempVal)){
-				data[(i * cols) + j] = 0;
-			}
-		}
-		cout << "\n";
+	data.unaryExpr(ptr_fun(nanCheck));
+}
+
+/**
+ * A helper function that checks if a value isnan, and returns 0 if it is.
+ */
+
+double nanCheck(double x) {
+	if (std::isnan(x)) {
+		return 0;
 	}
+	return x;
 }
 /**
  * Prints the contents of the data array.
@@ -144,12 +148,5 @@ double Grid::max() {
 
 double Grid::sum() {
 	double sum = 0;
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			if (data[(i * cols) + j] > max) {
-				sum +=  data[(i * cols) + j];
-			}
-		}
-	}
 	return sum;
 }
