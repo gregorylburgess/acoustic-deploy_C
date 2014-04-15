@@ -19,10 +19,10 @@
 using namespace std;
 
 
-Grid simulatetopographyGrid(int XDist, int YDist) {
+Grid* simulatetopographyGrid(int XDist, int YDist) {
 	cout<<"Simulating";
-	Grid topographyGrid = new Grid(XDist, YDist, "Topography");
-	double* data = topographyGrid.data.data();
+	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
+	double* data = topographyGrid->data.data();
 	double* refx = seq(-2*M_PI, 2*M_PI, XDist);
 	double* refy = seq(-2*M_PI, 2*M_PI, YDist);
 	int i = 0;
@@ -37,8 +37,8 @@ Grid simulatetopographyGrid(int XDist, int YDist) {
 	return(topographyGrid);
 }
 
-Grid getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug) {
-	Grid topographyGrid = new Grid(XDist, YDist, "Topography");
+Grid* getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug) {
+	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
 	if(strcmp(inputFileType.c_str(),"netcdf") == 0){
 	   // This will be the netCDF ID for the file and data variable.
 	   int ncid, varid, retval;
@@ -56,7 +56,7 @@ Grid getBathy(string inputFile, string inputFileType, int startX, int startY, in
 	   try {
 		   static size_t start[] = {startX, startY};
 		   static size_t range[] = {XDist, YDist};
-		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid.data.data());
+		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid->data.data());
 	   }
 	   catch (int i) {
 		   printError("ERROR: Error reading data.", retval, timestamp);
@@ -70,7 +70,7 @@ Grid getBathy(string inputFile, string inputFileType, int startX, int startY, in
 		cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
 		topographyGrid = simulatetopographyGrid(XDist,YDist);
 	}
-	topographyGrid.clearNA(0);
+	topographyGrid->clearNA();
 	//topographyGrid.printData();
     return(topographyGrid);
 }

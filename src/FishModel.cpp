@@ -6,7 +6,7 @@
 #include <Dense>
 using namespace std;
 
-Grid fish(unordered_map <string, string> params, Grid topographyGrid) {
+Grid* fish(unordered_map <string, string> params, Grid topographyGrid) {
 	int rows = topographyGrid.rows;
 	int cols = topographyGrid.cols;
 	int cellSize = atoi(params["cellSize"].c_str());
@@ -19,8 +19,8 @@ Grid fish(unordered_map <string, string> params, Grid topographyGrid) {
 	string fishmodel = params["fishmodel"];
 	if (fishmodel == "rw"){
 		cout << "Using RW model";
-		Grid behaviorGrid = new Grid(rows,cols, "behaviorGrid");
-		behaviorGrid.setAll(1);
+		Grid* behaviorGrid = new Grid(rows,cols, "behaviorGrid");
+		behaviorGrid->setAll(1);
 	}
 	else if (fishmodel == "ou") {
 		cout << "Using OU model";
@@ -39,9 +39,9 @@ Grid fish(unordered_map <string, string> params, Grid topographyGrid) {
 
 		Eigen::MatrixXd Y = ty.replicate(rows,1);
 		Eigen::MatrixXd X = tx.replicate(1,cols);
-		Eigen::MatrixXd XY = cbind(as.vector(X),as.vector(Y))
-		Eigen::MatrixXd hrVals = dmvnorm(XY,c(mux,muy),hrCov)
-		Grid behaviorGrid = matrix(hrVals,rows,cols,byrow=FALSE)
+		//Eigen::MatrixXd XY = cbind(as.vector(X),as.vector(Y))
+		//Eigen::MatrixXd hrVals = dmvnorm(XY,c(mux,muy),hrCov)
+		//Grid behaviorGrid = matrix(hrVals,rows,cols,byrow=FALSE)
 	}/*
 
 
@@ -53,7 +53,7 @@ Grid fish(unordered_map <string, string> params, Grid topographyGrid) {
 	// Make sure behaviorGrid sums to one
 	behaviorGrid = behaviorGrid/behaviorGrid.sum();
 	return (behaviorGrid)
-*/
-	return new Grid();
+*/Grid* a =new Grid();
+	return a;
 }
 

@@ -21,10 +21,10 @@ int main() {
 	bool debug = false;
 
 	//Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
-	Grid tGrid = simulatetopographyGrid(XDist,YDist);
-	Grid hGrid = new Grid(XDist, YDist, "Habitat");
-	Grid gGrid = new Grid(XDist, YDist, "Goodness");
-	Grid cGrid = new Grid(XDist, YDist, "Coverage");
+	Grid* tGrid = simulatetopographyGrid(XDist,YDist);
+	Grid* hGrid = new Grid(XDist, YDist, "Habitat");
+	Grid* gGrid = new Grid(XDist, YDist, "Goodness");
+	Grid* cGrid = new Grid(XDist, YDist, "Coverage");
 
 
 	int width = 500,
@@ -38,9 +38,9 @@ int main() {
 			coverageTitle = "Acoustic Coverage",
 			coverageFilePath = "data/Coverage.dat";
 
-	tGrid.writeMat();
-	tGrid.writeDat();
-	Graph tGraph = Graph(&tGrid);
+	tGrid->writeMat();
+	tGrid->writeDat();
+	Graph tGraph = Graph(tGrid);
 	int contourSize = 3;
 	int contours[] = {0,-500,-1000};
 	try {

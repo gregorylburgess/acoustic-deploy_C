@@ -10,8 +10,8 @@
 #include "Utility.h"
 
 
-Grid simulatetopographyGrid(int XDist, int YDist);
-Grid getBathy(std::string inputFile, std::string inputFileType, int startX, int startY,
+Grid* simulatetopographyGrid(int XDist, int YDist);
+Grid* getBathy(std::string inputFile, std::string inputFileType, int startX, int startY,
 			  int XDist, int YDist, std::string seriesName, long timestamp, bool debug);
 
 

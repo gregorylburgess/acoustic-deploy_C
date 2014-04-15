@@ -12,15 +12,16 @@ class Grid {
 		string name;
 
 		Grid();
-		Grid(int Cols, int Rows, string Name);
-		Grid(Grid* mat);
-		void clearNA(double val);
+		Grid(int Cols, int Rows, string name);
+		Grid(Grid* mat, string name);
+		void clearNA();
 		void printData();
-		void writeMat();
-		void writeDat();
 		void replace(double find, double replace);
 		void setAll(double val);
+		void writeDat();
+		void writeMat();
 		double min();
 		double max();
+		double nanCheck(double x);
 		double sum();
 };
