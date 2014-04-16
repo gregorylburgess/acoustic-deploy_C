@@ -1,5 +1,6 @@
 
 #include "Bathy.h"
+#include "FishModel.h"
 #include "Utility.h"
 #include <unordered_map>
 #include <stdlib.h>
@@ -9,14 +10,15 @@
 using namespace std;
 
 int main() {
-	unordered_map <string, double> params;
+	cout<<"HI";
+	unordered_map <string, string> params;
 	string inputFile = "himbsyn.bathy.v19.grd",
 		   inputFileType="netcdf",
 		   seriesName="z";
-	int startX = 7000,
-	    startY = 7000,
-	    XDist = 3000,
-	    YDist = 3000;
+	int startX = 1,
+	    startY = 1,
+	    XDist = 10,
+	    YDist = 10;
 	long timestamp = -1;
 	bool debug = false;
 
@@ -25,7 +27,7 @@ int main() {
 	Grid* hGrid = new Grid(XDist, YDist, "Habitat");
 	Grid* gGrid = new Grid(XDist, YDist, "Goodness");
 	Grid* cGrid = new Grid(XDist, YDist, "Coverage");
-
+	Grid* bGrid;
 
 	int width = 500,
 		height = 500;
@@ -44,13 +46,30 @@ int main() {
 	int contourSize = 3;
 	int contours[] = {0,-500,-1000};
 	try {
-		tGraph.printContour(contours, contourSize);
+		//tGraph.printContour(contours, contourSize);
 	}
 	catch(int e) {
 		cout << "Error:" << e <<"\n";
 		return 0;
 	}
 	cout << "Done" << "\n";
+	params.insert({"cellSize","5"});
+	params.insert({"ousdx",".2"});
+	params.insert({"ousdy",".2"});
+	params.insert({"oucor",".7"});
+	params.insert({"mux",".5"});
+	params.insert({"muy",".5"});
+	params.insert({"fishmodel","ou"});
+	int cellSize = atoi(params["cellSize"].c_str());
+	double ousdx = atof(params["ousdx"].c_str()),
+		   ousdy = atof(params["ousdy"].c_str()),
+		   oucor = atof(params["oucor"].c_str()),
+		   mux 	 = atof(params["mux"].c_str()),
+		   muy   = atof(params["muy"].c_str());
+	string fishmodel = params["fishmodel"];
+
+	bGrid = fish(params,tGrid);
+	bGrid->printData();
 	return 0;
 }
 

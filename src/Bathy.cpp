@@ -13,6 +13,8 @@
 #include <cmath>
 #include <math.h>
 #include <vector>
+#include <Dense>
+#include <Core>
 #include "Grid.h"
 #include "Utility.h"
 #define _USE_MATH_DEFINES
@@ -22,7 +24,7 @@ using namespace std;
 Grid* simulatetopographyGrid(int XDist, int YDist) {
 	cout<<"Simulating";
 	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
-	double* data = topographyGrid->data.data();
+	Eigen::MatrixXd data = topographyGrid->data;
 	double* refx = seq(-2*M_PI, 2*M_PI, XDist);
 	double* refy = seq(-2*M_PI, 2*M_PI, YDist);
 	int i = 0;
@@ -30,7 +32,7 @@ Grid* simulatetopographyGrid(int XDist, int YDist) {
 	for(int x = 0; x< XDist; x++) {
 		for(int y = 0; y< XDist; y++) {
 			i++;
-			data[i] = refx[x] * refy[y] * abs(refx[x]) * abs(refy[y]) - M_PI;
+			data(x,y) = refx[x] * refy[y] * abs(refx[x]) * abs(refy[y]) - M_PI;
 		}
 	}
 	cout<<"Returning";

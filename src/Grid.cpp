@@ -75,7 +75,7 @@ void Grid::printData() {
 	std::cout << std::fixed;
 	for (int i=0; i<rows; i++) {
 		for (int j=0; j<cols; j++) {
-			cout << setprecision(3)<<data(i,j) << "\t";
+			cout <<data(i,j) << "\t";
 		}
 		cout << "\n";
 	}

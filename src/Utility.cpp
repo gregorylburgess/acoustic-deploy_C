@@ -9,7 +9,8 @@
 #include <stdlib.h>
 #include <iostream>
 #include <fstream>
-#include "Grid.h"
+#include <Dense>
+#include <Core>
 #include "Utility.h"
 using namespace std;
 
@@ -40,3 +41,8 @@ bool fexists(string filename) {
   ifstream ifile (filename.c_str());
   return ifile;
 }
+
+
+
+
+
