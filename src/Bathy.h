@@ -6,6 +6,7 @@
 // Description : Hello World in C++, Ansi-style
 //============================================================================
 
+#pragma once
 #include "Grid.h"
 #include "Utility.h"
 
@@ -13,6 +14,6 @@
 Grid* simulatetopographyGrid(int XDist, int YDist);
 Grid* getBathy(std::string inputFile, std::string inputFileType, int startX, int startY,
 			  int XDist, int YDist, std::string seriesName, long timestamp, bool debug);
-
+double zero(double x);
 
 

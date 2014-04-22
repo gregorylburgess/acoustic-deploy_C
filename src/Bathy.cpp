@@ -21,23 +21,44 @@
 using namespace std;
 
 
+double zero(double x) {
+	if (x > 0) {
+		return 0;
+	}
+	return x;
+}
+
+
 Grid* simulatetopographyGrid(int XDist, int YDist) {
-	cout<<"Simulating";
 	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
 	Eigen::MatrixXd data = topographyGrid->data;
-	double* refx = seq(-2*M_PI, 2*M_PI, XDist);
-	double* refy = seq(-2*M_PI, 2*M_PI, YDist);
-	int i = 0;
-	cout<<"Calculating";
-	for(int x = 0; x< XDist; x++) {
-		for(int y = 0; y< XDist; y++) {
-			i++;
-			data(x,y) = refx[x] * refy[y] * abs(refx[x]) * abs(refy[y]) - M_PI;
-		}
-	}
-	cout<<"Returning";
+	Eigen::VectorXd refx = refx.LinSpaced(XDist,-2*M_PI, 2*M_PI);
+	Eigen::VectorXd refy = refx.LinSpaced(YDist,-2*M_PI, 2*M_PI);
+	Eigen::MatrixXd X = refx.replicate(1,YDist);
+	X.transposeInPlace();
+	Eigen::MatrixXd Y = refy.replicate(1,XDist);
+
+	//Eigen can only deal with two matrices at a time, so split the computation:
+	//topographyGrid = sin(X) * sin(Y) * abs(X) * abs(Y) -pi
+	Eigen::MatrixXd absXY = X.cwiseAbs().cwiseProduct(Y.cwiseAbs());
+	Eigen::MatrixXd sins = X.array().sin().cwiseProduct(Y.array().sin());
+	Eigen::MatrixXd temp = absXY.cwiseProduct(sins);
+
+	//All this work to create a matrix of pi...
+	Eigen::MatrixXd pi;
+	pi.resize(YDist,XDist);
+	pi.setConstant(M_PI);
+
+	//And the final result.
+	topographyGrid->data = temp - pi;
+	//Ignore positive values.
+
+
+	topographyGrid->data = topographyGrid->data.unaryExpr(ptr_fun(zero));
+
 	return(topographyGrid);
 }
+
 
 Grid* getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug) {
 	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");

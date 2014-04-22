@@ -17,7 +17,7 @@ Graph::Graph(Grid* g) {
 }
 /**
  * Creates a data file containing contour lines, which can be overlayed onto another graph.
- * Call this BEFORE calling pringGraph().
+ * Call this BEFORE calling printContourGraph().
  * @param title The title of the data file to generate.
  * @param contourLevels An array of integers holding contour levels (depth as a negative integer).
  * @param numLevels The length of contourLevels.
@@ -72,7 +72,7 @@ void Graph::printContour(int contourLevels[], int numLevels) {
  * Prints a graph of a given file with contour data.
  * Requires that a contour file for the existing file exists.
  */
-void  Graph::printContourGraph(string inputDataFilePath, string contourDataFilePath, int width, int height) {
+void  Graph::printContourGraph(int width, int height) {
 	double  xstart = -.5,
 			ystart = -.5;
 	std::stringstream ss;
@@ -87,10 +87,10 @@ void  Graph::printContourGraph(string inputDataFilePath, string contourDataFileP
 
 
 	cout << "Output File: " << outfile << "\n";
-	cout << "Data File: " << inputDataFilePath << "\n";
+	cout << "Data File: " << inputDatFile << "\n";
 
 
-	if (!fexists(inputDataFilePath)) {
+	if (!fexists(inputDatFile)) {
 		cout << "Input Data File not Found!\n";
 		throw 1;
 	}
@@ -106,7 +106,7 @@ void  Graph::printContourGraph(string inputDataFilePath, string contourDataFileP
 	ss.str("");
 	ss.clear();
 
-	ss << "plot \"" << inputDataFilePath << "\" matrix with image;";
+	ss << "plot \"" << inputDatFile << "\" matrix with image;";
 	plotData = ss.str();
 	ss.str("");
 	ss.clear();

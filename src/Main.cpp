@@ -10,24 +10,24 @@
 using namespace std;
 
 int main() {
-	cout<<"HI";
 	unordered_map <string, string> params;
 	string inputFile = "himbsyn.bathy.v19.grd",
 		   inputFileType="netcdf",
 		   seriesName="z";
 	int startX = 1,
 	    startY = 1,
-	    XDist = 10,
-	    YDist = 10;
+	    XDist = 100,
+	    YDist = 100;
 	long timestamp = -1;
 	bool debug = false;
 
 	//Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
 	Grid* tGrid = simulatetopographyGrid(XDist,YDist);
+	tGrid->printData();
 	Grid* hGrid = new Grid(XDist, YDist, "Habitat");
 	Grid* gGrid = new Grid(XDist, YDist, "Goodness");
 	Grid* cGrid = new Grid(XDist, YDist, "Coverage");
-	Grid* bGrid;
+	Grid* bGrid = new Grid(XDist, YDist, "Behavior");
 
 	int width = 500,
 		height = 500;
@@ -46,7 +46,8 @@ int main() {
 	int contourSize = 3;
 	int contours[] = {0,-500,-1000};
 	try {
-		//tGraph.printContour(contours, contourSize);
+		tGraph.printContour(contours, contourSize);
+		tGraph.printContourGraph(width,height);
 	}
 	catch(int e) {
 		cout << "Error:" << e <<"\n";
@@ -69,7 +70,8 @@ int main() {
 	string fishmodel = params["fishmodel"];
 
 	bGrid = fish(params,tGrid);
-	bGrid->printData();
+	bGrid->writeMat();
+	bGrid->writeDat();
 	return 0;
 }
 

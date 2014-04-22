@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 using namespace std;
 class Graph {
@@ -15,5 +16,5 @@ class Graph {
 		Grid* grid;
 		Graph(Grid* g);
 		void printContour(int contourLevels[], int numLevels);
-		void  printContourGraph(string dataFilePath, string contourDataFilePath, int width, int height);
+		void  printContourGraph(int width, int height);
 };

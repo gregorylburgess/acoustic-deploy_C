@@ -5,7 +5,6 @@
 #include "Grid.h"
 #include <unordered_map>
 #include <Dense>
-#include <gsl/gsl_randist.h>
 using namespace std;
 
 
@@ -30,7 +29,7 @@ double bivariateNorm(double x, double y, double mux, double muy, double sdx, dou
 	double base = (1 / (2 * M_PI * nsdxy * sqrt(ncor)));
 	double power = (-1 * z / (2 * ncor));
 	double val = pow(base, power);
-	cout << "nx:"<<nx<< "  ny:"<<ny<<"   ncor:"<<ncor<< "    nsdxy:"<<nsdxy<< "   z:"<<z<<"   base:"<<base <<"    pow:"<<power<<"    val:"<<val<<"\n";
+	//cout << "nx:"<<nx<< "  ny:"<<ny<<"   ncor:"<<ncor<< "    nsdxy:"<<nsdxy<< "   z:"<<z<<"   base:"<<base <<"    pow:"<<power<<"    val:"<<val<<"\n";
 	return val;
 }
 
@@ -83,7 +82,7 @@ Grid* fish(unordered_map <string, string> params, Grid* topographyGrid) {
 			for(double j=0; j<rows; j++) {
 				val= bivariateNorm(i/(cols-1), j/(rows-1), mux, muy, ousdx, ousdy, oucor);
 				behaviorGrid->data(i,j)=val;
-				cout << "("<<i/(cols-1)<<","<<j/(rows-1)<<"): "<<val << +"\n";
+				//cout << "("<<i/(cols-1)<<","<<j/(rows-1)<<"): "<<val << +"\n";
 			}
 
 		}
