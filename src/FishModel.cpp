@@ -5,6 +5,7 @@
 #include "Grid.h"
 #include <unordered_map>
 #include <Dense>
+#include "GlobalVars.h"
 using namespace std;
 
 
@@ -34,27 +35,38 @@ double bivariateNorm(double x, double y, double mux, double muy, double sdx, dou
 }
 
 
-Grid* fish(unordered_map <string, string> params, Grid* topographyGrid) {
+/**
+ * Checks if x is between the parameters 'mindepth' and 'maxdepth', returning 0 if it isn't.
+ * @param x The value to check.
+ */
+double vHabitat(double x) {
+	if (x >= acousticParams["mindepth"] && x <= acousticParams["maxdepth"]) {
+		return x;
+	}
+	return 0;
+}
+
+
+Grid* fish(Grid* topographyGrid) {
 	int rows = topographyGrid->rows;
 	int cols = topographyGrid->cols;
-	Grid* behaviorGrid = new Grid(rows, cols, "Behavioral Grid");
-	int cellSize = atoi(params["cellSize"].c_str());
-	double ousdx = atof(params["ousdx"].c_str()),
-		   ousdy = atof(params["ousdy"].c_str()),
-		   oucor = atof(params["oucor"].c_str()),
-		   mux 	 = atof(params["mux"].c_str()),
-		   muy   = atof(params["muy"].c_str());
-	string fishmodel = params["fishmodel"];
-	//land = topographyGrid$topographyGrid>=0
-	if (fishmodel == "rw"){
-		cout << "Using RW model";
+	Grid* behaviorGrid = new Grid(rows, cols, "Behavior");
+	int cellSize = acousticParams["cellSize"];
+	double ousdx = acousticParams["ousdx"],
+		   ousdy = acousticParams["ousdy"],
+		   oucor = acousticParams["oucor"],
+		   mux 	 = acousticParams["mux"],
+		   muy   = acousticParams["muy"];
+	double fishmodel = acousticParams["fishmodel"];
+
+	//RW
+	if (fishmodel == 0){
+		cout << "\nUsing RW model\n";
 		behaviorGrid->setAll(1);
 	}
-	else if (fishmodel == "ou") {
-		cout << "Using OU model\n";
-		//topographyGrid$x is a range of length numcols from cellsize to numcols*cellsize.
-		//mux = cellSize + (rows - 1) * cellSize * mux;
-		//muy = cellSize + (cols -1) * cellSize * muy;
+	//OU
+	else if (fishmodel == 1) {
+		cout << "\nUsing OU model\n";
 		double varx = pow(ousdx,2);
 		double vary = pow(ousdy,2);
 		double covxy = oucor * ousdx * ousdy;
@@ -77,27 +89,24 @@ Grid* fish(unordered_map <string, string> params, Grid* topographyGrid) {
 
 		Eigen::Matrix2d hrCov;
 		hrCov << vary,covxy,covxy,varx; //2d comma initalizer shortcut from Eigen
-		double val;
+		double temp;
 		for(double i=0; i<cols; i++) {
 			for(double j=0; j<rows; j++) {
-				val= bivariateNorm(i/(cols-1), j/(rows-1), mux, muy, ousdx, ousdy, oucor);
-				behaviorGrid->data(i,j)=val;
-				//cout << "("<<i/(cols-1)<<","<<j/(rows-1)<<"): "<<val << +"\n";
+				temp = bivariateNorm(i/(cols-1), j/(rows-1), mux, muy, ousdx, ousdy, oucor);
+				behaviorGrid->data(i,j) = temp;
 			}
-
 		}
 	}
+	if(acousticParams.count("mindepth")==1 && acousticParams.count("maxdepth")==1) {
+		behaviorGrid->data.unaryExpr(ptr_fun(vHabitat));
+	}
+	//convert the grid to a probaility matrix
+	double sum = behaviorGrid->data.sum();
+    behaviorGrid->data = behaviorGrid->data / sum;
+
 	return behaviorGrid;
 }
-			/*if((params.count("mindepth") > 0) && (params.count("maxdepth")>0)){
-		behaviorGrid[!verticalHabitat(atof(params["mindepth"]),atof(params["maxdepth"]),topographyGrid$topographyGrid)] = 0
-	}
-	// Set land areas to zero
-	behaviorGrid[land] = 0
-	// Make sure behaviorGrid sums to one
-	behaviorGrid = behaviorGrid/behaviorGrid.sum();
-	return (behaviorGrid)
-*/
+
 
 
 

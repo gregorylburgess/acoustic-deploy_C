@@ -17,6 +17,7 @@
 #include <Core>
 #include "Grid.h"
 #include "Utility.h"
+#include "GlobalVars.h"
 #define _USE_MATH_DEFINES
 using namespace std;
 
@@ -51,29 +52,29 @@ Grid* simulatetopographyGrid(int XDist, int YDist) {
 
 	//And the final result.
 	topographyGrid->data = temp - pi;
+
 	//Ignore positive values.
-
-
 	topographyGrid->data = topographyGrid->data.unaryExpr(ptr_fun(zero));
-
+	topographyGrid->clearNA();
 	return(topographyGrid);
 }
 
 
-Grid* getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp, bool debug) {
+Grid* getBathy(string inputFile, string inputFileType, int startX, int startY, int XDist, int YDist, string seriesName, long timestamp) {
 	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
+
+   // This will be the netCDF ID for the file and data variable.
+   int ncid, varid, retval=-100;
 	if(strcmp(inputFileType.c_str(),"netcdf") == 0){
-	   // This will be the netCDF ID for the file and data variable.
-	   int ncid, varid, retval;
 
 	   // Open the file. NC_NOWRITE tells netCDF we want read-only access to the file.
 	   if ((retval = nc_open(inputFile.c_str(), NC_NOWRITE, &ncid))) {
-		   printError("ERROR: Can't open NetCDF File; check your inputFile.", retval, timestamp);
+		   printError("ERROR: Can't open NetCDF File. Invalid inputFile path.", retval, timestamp);
 	   }
 
 	   // Get the varid of the data variable, based on its name.
 	   if ((retval = nc_inq_varid(ncid, seriesName.c_str(), &varid))) {
-		   printError("ERROR: Can't access variable id; check your seriesName.",retval, timestamp);
+		   printError("ERROR: Can't access variable id.  Invalid seriesName.",retval, timestamp);
 	   }
 	   // Read the data.
 	   try {
@@ -82,19 +83,27 @@ Grid* getBathy(string inputFile, string inputFileType, int startX, int startY, i
 		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid->data.data());
 	   }
 	   catch (int i) {
-		   printError("ERROR: Error reading data.", retval, timestamp);
+		   printError("ERROR: Error reading data.  Invalid file format.", retval, timestamp);
 	   }
 	   // Close the file, freeing all resources.
 	   if ((retval = nc_close(ncid))) {
-		   cout << "ERROR: Error closing the file." << retval << "\n";
+		   printError("ERROR: Error closing the file.", retval, timestamp);
 	   }
 	}
+
 	else {
 		cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
 		topographyGrid = simulatetopographyGrid(XDist,YDist);
 	}
+
 	topographyGrid->clearNA();
-	//topographyGrid.printData();
+	if (acousticParams["debug"] == 1) {
+		//topographyGrid->printData();
+		cout<<"startx "<< startX <<"\nXDist: "<<XDist<< "\nstartY: "<<startY<<"\nYDist: "<<YDist<<"\n";
+		cout<<"inputFileType: "<< inputFileType <<"\ninputFile: "<<inputFile<< "\nseriesName: "<<seriesName<<"\n";
+		cout<<"retval: "<<retval<<"\n"<<"ncid: "<<ncid<<"\n\n";
+	}
+
     return(topographyGrid);
 }
 

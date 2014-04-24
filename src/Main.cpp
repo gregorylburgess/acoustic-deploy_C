@@ -1,34 +1,41 @@
-
+#include <stdlib.h>
+#include <iostream>
 #include "Bathy.h"
 #include "FishModel.h"
 #include "Utility.h"
-#include <unordered_map>
-#include <stdlib.h>
-#include <iostream>
 #include <string>
+#include "Goodness.h"
 #include "Graph.h"
+#include "GlobalVars.h"
 using namespace std;
 
 int main() {
-	unordered_map <string, string> params;
-	string inputFile = "himbsyn.bathy.v19.grd",
+	acousticParams.insert({"debug",0});
+
+	acousticParams.insert({"cellSize",5});
+	acousticParams.insert({"fishmodel",1});
+	acousticParams.insert({"sensorRange",2});
+	acousticParams.insert({"bias",1});
+
+
+
+
+
+	acousticParams.insert({"ousdx",.8});
+	acousticParams.insert({"ousdy",.8});
+	acousticParams.insert({"oucor",0});
+	acousticParams.insert({"mux",.2});
+	acousticParams.insert({"muy",.2});
+	acousticParams.insert({"fishmodel",1});
+
+	string inputFile = "himbsyn.bathytopo.1km.v19.grd",
 		   inputFileType="netcdf",
 		   seriesName="z";
-	int startX = 1,
-	    startY = 1,
+	int startX = 200,
+	    startY = 200,
 	    XDist = 100,
 	    YDist = 100;
 	long timestamp = -1;
-	bool debug = false;
-
-	//Grid tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp, debug);
-	Grid* tGrid = simulatetopographyGrid(XDist,YDist);
-	tGrid->printData();
-	Grid* hGrid = new Grid(XDist, YDist, "Habitat");
-	Grid* gGrid = new Grid(XDist, YDist, "Goodness");
-	Grid* cGrid = new Grid(XDist, YDist, "Coverage");
-	Grid* bGrid = new Grid(XDist, YDist, "Behavior");
-
 	int width = 500,
 		height = 500;
 	string  bathymetryTitle = "Topography",
@@ -40,38 +47,36 @@ int main() {
 			coverageTitle = "Acoustic Coverage",
 			coverageFilePath = "data/Coverage.dat";
 
-	tGrid->writeMat();
-	tGrid->writeDat();
+	Grid* bGrid = new Grid(XDist, YDist, "Behavior");
+	Grid* gGrid = new Grid(XDist, YDist, "Goodness");
+	Grid* cGrid = new Grid(XDist, YDist, "Coverage");
+
+	Grid* tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp);
+	//Grid* tGrid = simulatetopographyGrid(XDist,YDist);
+	//Fill in Behavior Grid
+	bGrid = fish(tGrid);
+
+
 	Graph tGraph = Graph(tGrid);
-	int contourSize = 3;
+	Graph bGraph = Graph(bGrid);
 	int contours[] = {0,-500,-1000};
 	try {
-		tGraph.printContour(contours, contourSize);
+		tGraph.writeMat();
+		tGraph.writeDat();
+		//print contour files and graph
+		tGraph.printContour(contours);
 		tGraph.printContourGraph(width,height);
+		//print matrix for bGrid graph
+		bGraph.writeMat();
+		bGraph.writeDat();
 	}
 	catch(int e) {
 		cout << "Error:" << e <<"\n";
 		return 0;
 	}
-	cout << "Done" << "\n";
-	params.insert({"cellSize","5"});
-	params.insert({"ousdx",".2"});
-	params.insert({"ousdy",".2"});
-	params.insert({"oucor",".7"});
-	params.insert({"mux",".5"});
-	params.insert({"muy",".5"});
-	params.insert({"fishmodel","ou"});
-	int cellSize = atoi(params["cellSize"].c_str());
-	double ousdx = atof(params["ousdx"].c_str()),
-		   ousdy = atof(params["ousdy"].c_str()),
-		   oucor = atof(params["oucor"].c_str()),
-		   mux 	 = atof(params["mux"].c_str()),
-		   muy   = atof(params["muy"].c_str());
-	string fishmodel = params["fishmodel"];
-
-	bGrid = fish(params,tGrid);
-	bGrid->writeMat();
-	bGrid->writeDat();
+	cout << "Done Graphing" << "\n";
+	calculateGoodnessGrid(tGrid, bGrid, gGrid, 1, 1);
+	//cout<<gGrid->data;
 	return 0;
 }
 

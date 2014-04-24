@@ -4,13 +4,12 @@
 #include <string.h>
 #include <netcdf.h>
 #include <stdlib.h>
-#include <iomanip>
 #include <cmath>
 #include <math.h>
 #include <vector>
-#include "Grid.h"
 #include <Dense>
 #include <Core>
+#include "Grid.h"
 using namespace Eigen;
 using namespace std;
 
@@ -48,7 +47,6 @@ Grid::Grid(Grid* mat, string newName) {
 /**
  * A helper function that checks if a value isnan, and returns 0 if it is.
  */
-
 double nanCheck(double x) {
 	if (std::isnan(x)) {
 		return 0;
@@ -79,39 +77,6 @@ void Grid::printData() {
 		}
 		cout << "\n";
 	}
-}
-
-
-/**
- * Writes the data value to a text file as a matrix (.mat).
- */
-void Grid::writeMat() {
-	ofstream out;
-	out.open(("data/" + name + ".mat").c_str());
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			out << setprecision(3)<<data(i,j) << " ";
-		}
-		out << "\r\n";
-	}
-
-	out.close();
-}
-
-/**
- * Writes the data value to a data file (.dat), as a list of x,y,z points.
- */
-void Grid::writeDat() {
-	ofstream out;
-	out.open(("data/" + name + ".dat").c_str());
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			out << setprecision(3) << j << " " << i << " " << data(i,j) << "\r\n";
-		}
-		out << "\r\n";
-	}
-
-	out.close();
 }
 
 void Grid::replace(double find, double replace) {

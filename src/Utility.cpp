@@ -23,7 +23,7 @@ void printError(string msg, int errcode, long timestamp) {
 		cout << msg << " \nError Code: " << errcode  << "\n";
 	else
 		cout << msg << " \n";
-	exit(1);
+	exit (EXIT_FAILURE);
 }
 
 

@@ -1,9 +1,11 @@
 #include <stdlib.h>
 #include <iostream>
+#include <iomanip>
 #include "Grid.h"
 #include "Utility.h"
 #include "gnuplot_i.hpp"
 #include "Graph.h"
+#include "GlobalVars.h"
 using namespace std;
 
 
@@ -24,7 +26,7 @@ Graph::Graph(Grid* g) {
  * @param inputDataFilePath The full path to the output file to create.
  *
  */
-void Graph::printContour(int contourLevels[], int numLevels) {
+void Graph::printContour(int contourLevels[]) {
 	Gnuplot plots;
 	std::stringstream ss;
 	string setOutput ="set table \"" + contourDataFile + "\"",
@@ -41,6 +43,7 @@ void Graph::printContour(int contourLevels[], int numLevels) {
 
 	//Build a comma separated list of contour levels
 	ss << "set cntrparam levels discrete ";
+	int numLevels = sizeof(contourLevels)/sizeof(int);
 	for(int i=0; i<numLevels-1; i++) {
 		ss << contourLevels[i] << ",";
 	}
@@ -56,13 +59,14 @@ void Graph::printContour(int contourLevels[], int numLevels) {
 	//Plot the lines (this takes ~15s per contour level)
 	ss << "splot \"" << inputDatFile << "\"";
 	plot = ss.str();
-
-	cout << setOutput << "\n";
-	cout << setContour << "\n";
-	cout << cntrparam << "\n";
-	cout << noSurface << "\n";
-	cout << pm3d << "\n";
-	cout << plot << "\n";
+	if(acousticParams["debug"] == 1) {
+		cout << setOutput << "\n";
+		cout << setContour << "\n";
+		cout << cntrparam << "\n";
+		cout << noSurface << "\n";
+		cout << pm3d << "\n";
+		cout << plot << "\n";
+	}
 	plots.cmd(plot);
 
 }
@@ -85,10 +89,10 @@ void  Graph::printContourGraph(int width, int height) {
 			plotData,
 			pallete;
 
-
-	cout << "Output File: " << outfile << "\n";
-	cout << "Data File: " << inputDatFile << "\n";
-
+	if(acousticParams["debug"] == 1) {
+		cout << "Output File: " << outfile << "\n";
+		cout << "Data File: " << inputDatFile << "\n";
+	}
 
 	if (!fexists(inputDatFile)) {
 		cout << "Input Data File not Found!\n";
@@ -120,19 +124,55 @@ void  Graph::printContourGraph(int width, int height) {
 		plots.cmd(xrange);
 		plots.cmd(yrange);
 		//plots.cmd(size);
-
-		cout << setOuput << "\n";
-		cout << "set terminal gif\n";
-		cout << xrange << "\n";
-		cout << yrange << "\n";
-		cout << size << "\n";
-		cout << pallete << "\n";
-		cout << plotData << "\n";
-
+		if(acousticParams["debug"] == 1) {
+			cout << setOuput << "\n";
+			cout << "set terminal gif\n";
+			cout << xrange << "\n";
+			cout << yrange << "\n";
+			cout << size << "\n";
+			cout << pallete << "\n";
+			cout << plotData << "\n";
+		}
 		plots.cmd(plotData);
 	}
 	catch (GnuplotException ge) {
 	        cout << ge.what() << endl;
 	}
-	cout <<"Finished writing" << "\n";
+	cout <<"Finished writing graph data files" << "\n";
+}
+
+/**
+ * Writes the data value to a text file as a matrix (.mat).
+ */
+void Graph::writeMat() {
+	ofstream out;
+	int rows = grid->rows;
+	int cols = grid->cols;
+	out.open(("data/" + grid->name + ".mat").c_str());
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			out << setprecision(3)<<grid->data(i,j) << " ";
+		}
+		out << "\r\n";
+	}
+
+	out.close();
+}
+
+/**
+ * Writes the data value to a data file (.dat), as a list of x,y,z points.
+ */
+void Graph::writeDat() {
+	ofstream out;
+	int rows = grid->rows;
+	int cols = grid->cols;
+	out.open(("data/" + grid->name + ".dat").c_str());
+	for (int i=0; i<rows; i++) {
+		for (int j=0; j<cols; j++) {
+			out << setprecision(3) << j << " " << i << " " << grid->data(i,j) << "\r\n";
+		}
+		out << "\r\n";
+	}
+
+	out.close();
 }

@@ -19,8 +19,6 @@ class Grid {
 		void printData();
 		void replace(double find, double replace);
 		void setAll(double val);
-		void writeDat();
-		void writeMat();
 		double min();
 		double max();
 		double nanCheck(double x);
