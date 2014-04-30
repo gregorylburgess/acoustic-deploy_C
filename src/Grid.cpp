@@ -96,32 +96,3 @@ void Grid::setAll(double val) {
 		}
 	}
 }
-
-double Grid::min() {
-	double min = data(0,0);
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			if (data(i,j) < min) {
-				min = data(i,j);
-			}
-		}
-	}
-	return min;
-}
-
-double Grid::max() {
-	double max = data(0,0);
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			if (data(i,j) > max) {
-				max = data(i,j);
-			}
-		}
-	}
-	return max;
-}
-
-double Grid::sum() {
-	double sum = 0;
-	return sum;
-}

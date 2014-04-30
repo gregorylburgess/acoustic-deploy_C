@@ -10,22 +10,18 @@
 using namespace std;
 
 int main() {
-	acousticParams.insert({"debug",0});
+	/*acousticParams.insert({"debug",0});
 
 	acousticParams.insert({"cellSize",5});
 	acousticParams.insert({"fishmodel",1});
-	acousticParams.insert({"sensorRange",2});
+	acousticParams.insert({"sensorRange",5});
 	acousticParams.insert({"bias",1});
 
-
-
-
-
-	acousticParams.insert({"ousdx",.8});
-	acousticParams.insert({"ousdy",.8});
+	acousticParams.insert({"ousdx",.1});
+	acousticParams.insert({"ousdy",.1});
 	acousticParams.insert({"oucor",0});
-	acousticParams.insert({"mux",.2});
-	acousticParams.insert({"muy",.2});
+	acousticParams.insert({"mux",.5});
+	acousticParams.insert({"muy",.5});
 	acousticParams.insert({"fishmodel",1});
 
 	string inputFile = "himbsyn.bathytopo.1km.v19.grd",
@@ -51,10 +47,10 @@ int main() {
 	Grid* gGrid = new Grid(XDist, YDist, "Goodness");
 	Grid* cGrid = new Grid(XDist, YDist, "Coverage");
 
-	Grid* tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp);
-	//Grid* tGrid = simulatetopographyGrid(XDist,YDist);
+	//Grid* tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp);
+	Grid* tGrid = simulatetopographyGrid(XDist,YDist);
 	//Fill in Behavior Grid
-	bGrid = fish(tGrid);
+	fish(tGrid, bGrid);
 
 
 	Graph tGraph = Graph(tGrid);
@@ -76,7 +72,19 @@ int main() {
 	}
 	cout << "Done Graphing" << "\n";
 	calculateGoodnessGrid(tGrid, bGrid, gGrid, 1, 1);
+	Graph gGraph = Graph(gGrid);
+	gGraph.writeMat();*/
 	//cout<<gGrid->data;
+	std::pair<double,double> origin = std::make_pair(5.0,5.0),
+							 target = std::make_pair(1.0,1.0);
+	cout<<"calling";
+
+	std::set<std::pair<double,double>> pairs = getCells(&origin,&target);
+	for (std::set<std::pair<double,double> >::iterator it = pairs.begin(); it != pairs.end(); ++it) {
+		std::pair<double,double>  i = *it;
+	    cout <<"("<< i.first <<","<< i.second<<")\n";
+	}
+
 	return 0;
 }
 

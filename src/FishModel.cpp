@@ -47,10 +47,9 @@ double vHabitat(double x) {
 }
 
 
-Grid* fish(Grid* topographyGrid) {
+void fish(Grid* topographyGrid, Grid* behaviorGrid) {
 	int rows = topographyGrid->rows;
 	int cols = topographyGrid->cols;
-	Grid* behaviorGrid = new Grid(rows, cols, "Behavior");
 	int cellSize = acousticParams["cellSize"];
 	double ousdx = acousticParams["ousdx"],
 		   ousdy = acousticParams["ousdy"],
@@ -103,8 +102,6 @@ Grid* fish(Grid* topographyGrid) {
 	//convert the grid to a probaility matrix
 	double sum = behaviorGrid->data.sum();
     behaviorGrid->data = behaviorGrid->data / sum;
-
-	return behaviorGrid;
 }
 
 
