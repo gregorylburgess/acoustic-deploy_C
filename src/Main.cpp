@@ -7,6 +7,7 @@
 #include "Goodness.h"
 #include "Graph.h"
 #include "GlobalVars.h"
+#include "Test/Test.h"
 using namespace std;
 
 int main() {
@@ -75,16 +76,8 @@ int main() {
 	Graph gGraph = Graph(gGrid);
 	gGraph.writeMat();*/
 	//cout<<gGrid->data;
-	std::pair<double,double> origin = std::make_pair(5.0,5.0),
-							 target = std::make_pair(1.0,1.0);
-	cout<<"calling";
 
-	std::set<std::pair<double,double>> pairs = getCells(&origin,&target);
-	for (std::set<std::pair<double,double> >::iterator it = pairs.begin(); it != pairs.end(); ++it) {
-		std::pair<double,double>  i = *it;
-	    cout <<"("<< i.first <<","<< i.second<<")\n";
-	}
-
+	runTests();
 	return 0;
 }
 
