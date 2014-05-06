@@ -15,6 +15,7 @@ class Grid {
 		Grid();
 		Grid(int Cols, int Rows, string name);
 		Grid(Grid* mat, string name);
+		Grid(Eigen::MatrixXd dat, string newName);
 		void clearNA();
 		void printData();
 		void replace(double find, double replace);

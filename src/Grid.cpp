@@ -43,6 +43,16 @@ Grid::Grid(Grid* mat, string newName) {
 	memcpy(&data, &matrix.data, size);
 }
 
+/**
+ * Makes a Grid out of an existing Eigen matrix.
+ */
+Grid::Grid(Eigen::MatrixXd dat, string newName) {
+	rows = dat.rows();
+	cols = dat.cols();
+	name = newName;
+	data = dat;
+}
+
 
 /**
  * A helper function that checks if a value isnan, and returns 0 if it is.

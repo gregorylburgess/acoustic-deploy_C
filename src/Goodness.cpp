@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <Dense>
 #include <stdlib.h>
 #include <iostream>
 #include <limits>
@@ -71,8 +72,24 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, doubl
 
 
 void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, double rng) {
+	int range = (int) rng;
+		int cols = topographyGrid->cols;
+		int rows = topographyGrid->rows;
+		int rstart=0, cstart=0, rdist=0,cdist=0,rend=0,cend=0;
 
-}
+		for (int r = 0; r<rows; r++) {
+			rstart = max(r-range, 0);
+			rend = min(rows-1,r+range);
+			rdist = rend-rstart + 1;
+			for (int c = 0; c<cols; c++) {
+				cstart = max(c-range,0);
+				cend = min(cols-1, c+range);
+				cdist = cend-cstart + 1;
+				//cout<<"\nr:"<<r<<"\nc"<<c<<"\nrstart:"<<rstart<<"\nrend:"<<rend<<"\nrdist:"<<rdist<<"\ncstart:"<<cstart<<"\ncend:"<<cend<<"\ncdist:"<<cdist<<"\n\n\n";
+				goodnessGrid->data(r,c)= behaviorGrid->data.block(rstart, cstart, rdist, cdist).sum();
+			}
+		}
+	}
 
 
 std::pair<double,double> offset (std::pair<double,double> *point) {
@@ -151,5 +168,42 @@ std::set<std::pair<double,double>> getCells(std::pair <double,double> *origin, s
 		pairs.erase(*origin);
 	}
 	return pairs;
+
+}
+
+/**
+ * Calculates the visibility Grid for a cell at r,c on the topographyGrid.  Should be a grid containing the max visible depth.
+ */
+Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int rng) {
+	int size = 2 * rng + 1;
+	Eigen::MatrixXd slopeGrid;
+	Eigen::MatrixXd vizGrid;
+	Eigen::MatrixXd localTopo;
+	//Vectors from -rng to rng, of length size
+	Eigen::VectorXd refx = refx.LinSpaced(size, -rng, rng);
+	Eigen::VectorXd refy = refx.LinSpaced(size, -rng, rng);
+	Eigen::MatrixXd X = refx.replicate(1,size);
+	Eigen::MatrixXd Y = refy.replicate(1,size);
+	X.transposeInPlace();
+	//set slopeGrid to a gird containing each cell's linear distance from the center cell.
+	slopeGrid = Y.cwiseAbs2() + X.cwiseAbs2();
+	slopeGrid = slopeGrid.cwiseSqrt();
+
+	//copy out the block of topography we're interested in.
+	localTopo = topographyGrid->data.block(rStart, cStart, size, size);
+	vizGrid << localTopo(rng,rng);
+	vizGrid.replicate(size,size);
+	//vizGrid now contains the depth deltas from the origin cell
+	vizGrid = localTopo - vizGrid;
+	//slopeGrid now contains depth deltas divided by distance deltas, aka the slope from the center cell to each cell.
+	slopeGrid = vizGrid.cwiseQuotient(slopeGrid);
+
+
+
+
+	return slopeGrid;
+}
+
+double add (int n) {
 
 }

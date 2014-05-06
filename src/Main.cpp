@@ -11,7 +11,7 @@
 using namespace std;
 
 int main() {
-	/*acousticParams.insert({"debug",0});
+	acousticParams.insert({"debug",0});
 
 	acousticParams.insert({"cellSize",5});
 	acousticParams.insert({"fishmodel",1});
@@ -52,7 +52,7 @@ int main() {
 	Grid* tGrid = simulatetopographyGrid(XDist,YDist);
 	//Fill in Behavior Grid
 	fish(tGrid, bGrid);
-
+	/*
 
 	Graph tGraph = Graph(tGrid);
 	Graph bGraph = Graph(bGrid);
@@ -74,10 +74,11 @@ int main() {
 	cout << "Done Graphing" << "\n";
 	calculateGoodnessGrid(tGrid, bGrid, gGrid, 1, 1);
 	Graph gGraph = Graph(gGrid);
-	gGraph.writeMat();*/
+	gGraph.writeMat();
 	//cout<<gGrid->data;
-
-	runTests();
+*/
+	Grid* temp = new Grid(calcPercentViz(tGrid, 30,30,10),"temp");
+	temp->printData();
 	return 0;
 }
 
