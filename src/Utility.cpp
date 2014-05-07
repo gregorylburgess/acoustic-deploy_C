@@ -11,6 +11,7 @@
 #include <fstream>
 #include <Dense>
 #include <Core>
+#include <set>
 #include "Utility.h"
 using namespace std;
 
@@ -42,7 +43,12 @@ bool fexists(string filename) {
   return ifile;
 }
 
-
-
+void printSet(std::set<std::pair<double,double> > *pairs) {
+	for (std::set<std::pair<double,double> >::iterator it = pairs->begin(); it != pairs->end(); ++it) {
+		std::pair<double,double>  i = *it;
+	    cout <<"("<< i.first <<","<< i.second<<")\n";
+	}
+	cout <<"\n";
+}
 
 

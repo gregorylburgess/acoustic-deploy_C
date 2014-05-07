@@ -176,32 +176,78 @@ std::set<std::pair<double,double>> getCells(std::pair <double,double> *origin, s
  */
 Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int rng) {
 	int size = 2 * rng + 1;
+	std::pair<double,double> origin = make_pair(rng,rng);
+	std::pair<double,double> target;
 	Eigen::MatrixXd slopeGrid;
+	Eigen::MatrixXd slopeReference;
 	Eigen::MatrixXd vizGrid;
 	Eigen::MatrixXd localTopo;
+	Eigen::MatrixXd X;
+	Eigen::MatrixXd Y;
 	//Vectors from -rng to rng, of length size
 	Eigen::VectorXd refx = refx.LinSpaced(size, -rng, rng);
-	Eigen::VectorXd refy = refx.LinSpaced(size, -rng, rng);
-	Eigen::MatrixXd X = refx.replicate(1,size);
-	Eigen::MatrixXd Y = refy.replicate(1,size);
+	Eigen::VectorXd refy = refy.LinSpaced(size, -rng, rng);
+	std::set<std::pair<double,double>> cells;
+
+	Y = refy.replicate(1,size);
+	X = refx.replicate(1,size);
 	X.transposeInPlace();
+
 	//set slopeGrid to a gird containing each cell's linear distance from the center cell.
 	slopeGrid = Y.cwiseAbs2() + X.cwiseAbs2();
 	slopeGrid = slopeGrid.cwiseSqrt();
+	slopeGrid(rng,rng) = 1;
 
 	//copy out the block of topography we're interested in.
 	localTopo = topographyGrid->data.block(rStart, cStart, size, size);
-	vizGrid << localTopo(rng,rng);
-	vizGrid.replicate(size,size);
+	vizGrid.resize(size,size);
+	double val = localTopo(rng,rng);
+	vizGrid.setConstant(val);
 	//vizGrid now contains the depth deltas from the origin cell
 	vizGrid = localTopo - vizGrid;
 	//slopeGrid now contains depth deltas divided by distance deltas, aka the slope from the center cell to each cell.
 	slopeGrid = vizGrid.cwiseQuotient(slopeGrid);
+	//Copy the slopeGrid to a reference Grid, as we'll reorder slopeGrid.
+	slopeReference.resize(size,size);
+	memcpy(slopeReference.data(),slopeGrid.data(),slopeGrid.size() * sizeof(double));
 
+	//Sort the data of slopeGrid by slope (result is column major).
+	std::sort(slopeGrid.data(), slopeGrid.data() + slopeGrid.size());
 
+	double *start = slopeGrid.data();
+	int gridSize = slopeGrid.size();
+	//for each cell in the grid, calculate the intervening cells between the current cell and the origin.
+	for (int r = 0; r<size; r++) {
+		for (int c = 0; c<size; c++) {
+			target = make_pair(r,c);
+			cells = getCells(&origin, &target);
+			cout<<"Cells for R:"<<r<<" C:"<<c<<"\n";
+			std::set<std::pair<double,double>>* ce = &cells;
+			printSet(&cells);
+			double* locPtr = 0;
+			int maxLoc = 0;
+			int row = 0;
+			int col = 0;
+			int loc = 0;
+			double val = 0;
+			std::set<std::pair<double,double>>::iterator it;
+			cout<<"\n";
+			for (it = cells.begin(); it != cells.end(); it++) {
+				row = (int) &it->first;
+				col = (int) &it->second;
 
-
-	return slopeGrid;
+				cout<<"row:"<<r<<"\ncol:"<<c<<"\n";
+				//RUNTIME ERROR probably related to teh memcpy call on the slopeReference Matrix.
+				val = slopeReference(row, col);
+				locPtr = std::find(start, start + gridSize, val);
+				loc = locPtr - start;
+				if(loc > maxLoc) {
+					maxLoc = loc;
+				}
+			}
+		}
+	}
+	return slopeReference;
 }
 
 double add (int n) {

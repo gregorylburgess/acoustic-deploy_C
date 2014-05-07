@@ -77,7 +77,7 @@ int main() {
 	gGraph.writeMat();
 	//cout<<gGrid->data;
 */
-	Grid* temp = new Grid(calcPercentViz(tGrid, 30,30,10),"temp");
+	Grid* temp = new Grid(calcPercentViz(tGrid, 30,30,2),"temp");
 	temp->printData();
 	return 0;
 }

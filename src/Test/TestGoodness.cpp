@@ -3,6 +3,7 @@
 #include <set>
 #include <string>
 #include "../Goodness.h"
+#include "../Utility.h"
 #include "TestGoodness.h"
 using namespace std;
 
@@ -28,12 +29,7 @@ bool runGoodnessTests() {
 	return success;
 }
 
-void printSet(std::set<std::pair<double,double> > *pairs) {
-	for (std::set<std::pair<double,double> >::iterator it = pairs->begin(); it != pairs->end(); ++it) {
-		std::pair<double,double>  i = *it;
-	    cout <<"("<< i.first <<","<< i.second<<")\n";
-	}
-}
+
 
 /**
  * Calls getCells() with the given origin and target parameters, and compares the result to the solution parameter.  If they match, return true.
