@@ -11,7 +11,8 @@
 using namespace std;
 
 int main() {
-	acousticParams.insert({"debug",0});
+	bool test = true;
+	acousticParams.insert({"debug",1});
 
 	acousticParams.insert({"cellSize",5});
 	acousticParams.insert({"fishmodel",1});
@@ -47,17 +48,21 @@ int main() {
 	Grid* bGrid = new Grid(XDist, YDist, "Behavior");
 	Grid* gGrid = new Grid(XDist, YDist, "Goodness");
 	Grid* cGrid = new Grid(XDist, YDist, "Coverage");
+	Grid* tGrid;
+	if(test) {
+		tGrid = simulatetopographyGrid(XDist,YDist);
+	}
+	else {
+		tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp);
+	}
 
-	//Grid* tGrid = getBathy(inputFile, inputFileType, startX, startY,XDist, YDist, seriesName, timestamp);
-	Grid* tGrid = simulatetopographyGrid(XDist,YDist);
 	//Fill in Behavior Grid
 	fish(tGrid, bGrid);
-	/*
-
 	Graph tGraph = Graph(tGrid);
 	Graph bGraph = Graph(bGrid);
-	int contours[] = {0,-500,-1000};
+	int contours[] = {0,-3,-5};
 	try {
+
 		tGraph.writeMat();
 		tGraph.writeDat();
 		//print contour files and graph
@@ -66,17 +71,17 @@ int main() {
 		//print matrix for bGrid graph
 		bGraph.writeMat();
 		bGraph.writeDat();
+		cout << "Done Graphing" << "\n";
 	}
 	catch(int e) {
 		cout << "Error:" << e <<"\n";
 		return 0;
 	}
-	cout << "Done Graphing" << "\n";
+
 	calculateGoodnessGrid(tGrid, bGrid, gGrid, 1, 1);
 	Graph gGraph = Graph(gGrid);
 	gGraph.writeMat();
-	//cout<<gGrid->data;
-*/
+	cout<<gGrid->data;
 	Grid* temp = new Grid(calcPercentViz(tGrid, 30,30,2),"temp");
 	temp->printData();
 	return 0;

@@ -32,7 +32,7 @@ void Graph::printContour(int contourLevels[]) {
 	string setOutput ="set table \"" + contourDataFile + "\"",
 		   setContour = "set contour surface",
 		   cntrparam,
-		   noSurface = "set nosurface",
+		   noSurface = "unset surface",
 		   pm3d = "set pm3d map",
 		   plot;
 
@@ -55,7 +55,7 @@ void Graph::printContour(int contourLevels[]) {
 	//Don't plot the map, just the contour lines
 	plots.cmd(noSurface);
 	//pm3d is required for contour lines
-	plots.cmd(pm3d);
+	//plots.cmd(pm3d);
 	//Plot the lines (this takes ~15s per contour level)
 	ss << "splot \"" << inputDatFile << "\"";
 	plot = ss.str();
@@ -134,11 +134,11 @@ void  Graph::printContourGraph(int width, int height) {
 			cout << plotData << "\n";
 		}
 		plots.cmd(plotData);
+		cout <<"Finished writing graph data files" << "\n";
 	}
 	catch (GnuplotException ge) {
 	        cout << ge.what() << endl;
 	}
-	cout <<"Finished writing graph data files" << "\n";
 }
 
 /**

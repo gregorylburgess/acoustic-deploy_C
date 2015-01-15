@@ -43,9 +43,9 @@ bool fexists(string filename) {
   return ifile;
 }
 
-void printSet(std::set<std::pair<double,double> > *pairs) {
-	for (std::set<std::pair<double,double> >::iterator it = pairs->begin(); it != pairs->end(); ++it) {
-		std::pair<double,double>  i = *it;
+void printSet(std::set<std::pair<int,int> > *pairs) {
+	for (std::set<std::pair<int,int> >::iterator it = pairs->begin(); it != pairs->end(); ++it) {
+		std::pair<int,int>  i = *it;
 	    cout <<"("<< i.first <<","<< i.second<<")\n";
 	}
 	cout <<"\n";

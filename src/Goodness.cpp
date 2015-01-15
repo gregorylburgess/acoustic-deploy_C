@@ -92,15 +92,15 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
 	}
 
 
-std::pair<double,double> offset (std::pair<double,double> *point) {
-	std::pair<double,double> newPoint = std::make_pair(point->first+.5,point->second+.5);
+std::pair<int,int> offset (std::pair<int,int> *point) {
+	std::pair<int,int> newPoint = std::make_pair(point->first+.5,point->second+.5);
 	return newPoint;
 }
 /**
  * Gets a set of cell locations that intersect a beam between the origin cell and a target cell. Pairs are configured as (x,y), (column,row).
  */
-std::set<std::pair<double,double>> getCells(std::pair <double,double> *origin, std::pair <double,double> *target) {
-	std::set<std::pair<double,double> > pairs;
+std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <int,int> *target) {
+	std::set<std::pair<int,int> > pairs;
 
 	//Calculate the slope
 	double ox=origin->first, oy=origin->second, tx=target->first,ty=target->second;
@@ -118,7 +118,7 @@ std::set<std::pair<double,double>> getCells(std::pair <double,double> *origin, s
 			absm = abs(m);
 		}
 		// assume the sensor is in the middle of the cell
-		std::pair<double,double> offsetO = offset(origin);
+		std::pair<int,int> offsetO = offset(origin);
 		double b = offsetO.second - m * offsetO.first;
 		double lowerX = min(ox, tx);
 		double upperX = max(ox, tx);
@@ -126,7 +126,6 @@ std::set<std::pair<double,double>> getCells(std::pair <double,double> *origin, s
 		double upperY = max(oy, ty);
 		double startX = lowerX, endX = upperX;
 		double startY = lowerY, endY = upperY;
-		double temp = 0;
 		double y = 0, y1 = 0;
 		double x = 0, x1 = 0;
 
@@ -176,8 +175,8 @@ std::set<std::pair<double,double>> getCells(std::pair <double,double> *origin, s
  */
 Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int rng) {
 	int size = 2 * rng + 1;
-	std::pair<double,double> origin = make_pair(rng,rng);
-	std::pair<double,double> target;
+	std::pair<int,int> origin = make_pair(rng,rng);
+	std::pair<int,int> target;
 	Eigen::MatrixXd slopeGrid;
 	Eigen::MatrixXd slopeReference;
 	Eigen::MatrixXd vizGrid;
@@ -187,7 +186,7 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int
 	//Vectors from -rng to rng, of length size
 	Eigen::VectorXd refx = refx.LinSpaced(size, -rng, rng);
 	Eigen::VectorXd refy = refy.LinSpaced(size, -rng, rng);
-	std::set<std::pair<double,double>> cells;
+	std::set<std::pair<int,int>> cells;
 
 	Y = refy.replicate(1,size);
 	X = refx.replicate(1,size);
@@ -222,7 +221,7 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int
 			target = make_pair(r,c);
 			cells = getCells(&origin, &target);
 			cout<<"Cells for R:"<<r<<" C:"<<c<<"\n";
-			std::set<std::pair<double,double>>* ce = &cells;
+			//std::set<std::pair<int,int>>* ce = &cells;
 			printSet(&cells);
 			double* locPtr = 0;
 			int maxLoc = 0;
@@ -230,11 +229,11 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int
 			int col = 0;
 			int loc = 0;
 			double val = 0;
-			std::set<std::pair<double,double>>::iterator it;
+			std::set<std::pair<int,int>>::iterator it;
 			cout<<"\n";
 			for (it = cells.begin(); it != cells.end(); it++) {
-				row = (int) &it->first;
-				col = (int) &it->second;
+				row =  it->first;
+				col =  it->second;
 
 				cout<<"row:"<<r<<"\ncol:"<<c<<"\n";
 				//RUNTIME ERROR probably related to teh memcpy call on the slopeReference Matrix.
@@ -250,6 +249,3 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int
 	return slopeReference;
 }
 
-double add (int n) {
-
-}
