@@ -19,7 +19,7 @@ using namespace std;
 /**
  * Provides unified error reporting capabilities.
  */
-void printError(string msg, int errcode, long timestamp) {
+void printError(string msg, int errcode, string timestamp) {
 	if (errcode)
 		cout << msg << " \nError Code: " << errcode  << "\n";
 	else

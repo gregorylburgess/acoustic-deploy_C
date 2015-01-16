@@ -13,7 +13,7 @@ using namespace std;
 Graph::Graph(Grid* g) {
 	contour = false;
 	grid = g;
-	contourDataFile = "data/contour.dat";
+	contourDataFile = "data/" + grid->name + "_contour.dat";
 	inputDatFile = "data/" + grid->name + ".dat";
 	inputMatFile = "data/" + grid->name + ".mat";
 }
@@ -26,7 +26,8 @@ Graph::Graph(Grid* g) {
  * @param inputDataFilePath The full path to the output file to create.
  *
  */
-void Graph::printContour(int contourLevels[]) {
+void Graph::printContour(double *contourLevels) {
+	cout << "\n\nWriting contour file...\n";
 	Gnuplot plots;
 	std::stringstream ss;
 	string setOutput ="set table \"" + contourDataFile + "\"",
@@ -35,7 +36,8 @@ void Graph::printContour(int contourLevels[]) {
 		   noSurface = "unset surface",
 		   pm3d = "set pm3d map",
 		   plot;
-
+	int i=0, numLevels = stoi(acousticParams["numContourDepths"]);
+	cout << numLevels << "\n";
 	//Print to a table instead of a gif
 	plots.cmd(setOutput);
 	//Enable contour lines
@@ -43,8 +45,7 @@ void Graph::printContour(int contourLevels[]) {
 
 	//Build a comma separated list of contour levels
 	ss << "set cntrparam levels discrete ";
-	int numLevels = sizeof(contourLevels)/sizeof(int);
-	for(int i=0; i<numLevels-1; i++) {
+	for(i=0; i<numLevels-1; i++) {
 		ss << contourLevels[i] << ",";
 	}
 	ss << contourLevels[numLevels-1];
@@ -59,7 +60,7 @@ void Graph::printContour(int contourLevels[]) {
 	//Plot the lines (this takes ~15s per contour level)
 	ss << "splot \"" << inputDatFile << "\"";
 	plot = ss.str();
-	if(acousticParams["debug"] == 1) {
+	if(acousticParams["debug"] == "1") {
 		cout << setOutput << "\n";
 		cout << setContour << "\n";
 		cout << cntrparam << "\n";
@@ -76,7 +77,9 @@ void Graph::printContour(int contourLevels[]) {
  * Prints a graph of a given file with contour data.
  * Requires that a contour file for the existing file exists.
  */
-void  Graph::printContourGraph(int width, int height) {
+void  Graph::printContourGraph(int width, int height, double *contourLevels) {
+	cout << "\n\nPrinting contour graph...\n";
+	int i = 0, numOfLevels = stoi(acousticParams["numContourDepths"]);
 	double  xstart = -.5,
 			ystart = -.5;
 	std::stringstream ss;
@@ -89,17 +92,23 @@ void  Graph::printContourGraph(int width, int height) {
 			plotData,
 			pallete;
 
-	if(acousticParams["debug"] == 1) {
+	if(acousticParams["debug"] == "1") {
 		cout << "Output File: " << outfile << "\n";
 		cout << "Data File: " << inputDatFile << "\n";
+		cout << "Matrix File: " << inputMatFile << "\n";
 	}
 
 	if (!fexists(inputDatFile)) {
-		cout << "Input Data File not Found!\n";
+		cout << "Input .dat File not Found!\n";
 		throw 1;
 	}
 
-	//Set values
+	if (!fexists(inputMatFile)) {
+		cout << "Input .mat File not Found!\n";
+		throw 1;
+	}
+
+	//Set x/y range values
 	ss << "set yrange [" << ystart << ":" << grid->rows - 0.5 << "];";
 	yrange = ss.str();
 	ss.str("");
@@ -110,7 +119,18 @@ void  Graph::printContourGraph(int width, int height) {
 	ss.str("");
 	ss.clear();
 
-	ss << "plot \"" << inputDatFile << "\" matrix with image;";
+	//plot command
+	ss << "plot \"" << inputMatFile << "\" matrix with image,";
+
+	//add contour lines
+	for (i=0; i<numOfLevels; i++) {
+		ss << " \"" << contourDataFile << "\" index " << i << " with line title \""
+					<< contourLevels[numOfLevels - i -1] <<"\" ls " << i + 1 << ",";
+	}
+
+	//add sensor icons
+	 ss << "\'-\' using 1:2:3 with circles lc rgb \"blue\" fs solid title \"Sensors\"";
+	//finalize string
 	plotData = ss.str();
 	ss.str("");
 	ss.clear();
@@ -124,7 +144,7 @@ void  Graph::printContourGraph(int width, int height) {
 		plots.cmd(xrange);
 		plots.cmd(yrange);
 		//plots.cmd(size);
-		if(acousticParams["debug"] == 1) {
+		if(acousticParams["debug"] == "1") {
 			cout << setOuput << "\n";
 			cout << "set terminal gif\n";
 			cout << xrange << "\n";
@@ -134,7 +154,7 @@ void  Graph::printContourGraph(int width, int height) {
 			cout << plotData << "\n";
 		}
 		plots.cmd(plotData);
-		cout <<"Finished writing graph data files" << "\n";
+		cout <<"\nFinished writing graph data files" << "\n";
 	}
 	catch (GnuplotException ge) {
 	        cout << ge.what() << endl;

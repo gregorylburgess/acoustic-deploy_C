@@ -34,10 +34,10 @@ bool runGoodnessTests() {
 /**
  * Calls getCells() with the given origin and target parameters, and compares the result to the solution parameter.  If they match, return true.
  */
-bool check(std::pair<double,double> *origin, std::pair<double,double> *target, std::set<std::pair<double,double>> *solution, string errorMsg) {
-	std::set<std::pair<double,double>> pairs = getCells(origin, target);
-		for (std::set<std::pair<double,double> >::iterator it = pairs.begin(); it != pairs.end(); ++it) {
-			std::pair<double,double>  i = *it;
+bool check(std::pair<int,int> *origin, std::pair<int,int> *target, std::set<std::pair<int,int>> *solution, string errorMsg) {
+	std::set<std::pair<int,int>> pairs = getCells(origin, target);
+		for (std::set<std::pair<int,int> >::iterator it = pairs.begin(); it != pairs.end(); ++it) {
+			std::pair<int,int>  i = *it;
 			if(pairs.find(i)==pairs.end()) {
 				cout<<"ERROR in :"<<errorMsg<<".\n";
 				cout<<"Expected:\n";
@@ -55,9 +55,9 @@ bool check(std::pair<double,double> *origin, std::pair<double,double> *target, s
  * Calls getcells() with a positive steep slope.
  */
 bool positiveSteep() {
-	std::pair<double,double> origin = make_pair(1.0,1.0),
+	std::pair<int,int> origin = make_pair(1.0,1.0),
 							 target = make_pair(2.0,5.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(1,2),
 											make_pair(1,3),
 											make_pair(2,3),
@@ -71,9 +71,9 @@ bool positiveSteep() {
  * Calls getcells() with a negative steep slope.
  */
 bool negativeSteep() {
-	std::pair<double,double> origin = make_pair(2.0,5.0),
+	std::pair<int,int> origin = make_pair(2.0,5.0),
 							 target = make_pair(1.0,1.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(1,1),
 											make_pair(1,2),
 											make_pair(1,3),
@@ -87,9 +87,9 @@ bool negativeSteep() {
  * Calls getcells() with a positive slow slope.
  */
 bool positiveSlow() {
-	std::pair<double,double> origin = make_pair(1.0,1.0),
+	std::pair<int,int> origin = make_pair(1.0,1.0),
 							 target = make_pair(5.0,2.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(2,1),
 											make_pair(3,1),
 											make_pair(3,2),
@@ -103,9 +103,9 @@ bool positiveSlow() {
  * Calls getcells() with a negative slow slope.
  */
 bool negativeSlow() {
-	std::pair<double,double> origin = make_pair(5.0,2.0),
+	std::pair<int,int> origin = make_pair(5.0,2.0),
 							 target = make_pair(1.0,1.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(1,1),
 											make_pair(2,1),
 											make_pair(3,1),
@@ -119,9 +119,9 @@ bool negativeSlow() {
  * Calls getcells() with a positive horizontal slope.
  */
 bool positiveHorizontal() {
-	std::pair<double,double> origin = make_pair(1.0,1.0),
+	std::pair<int,int> origin = make_pair(1.0,1.0),
 							 target = make_pair(5.0,1.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(2,1),
 											make_pair(3,1),
 											make_pair(4,1),
@@ -134,9 +134,9 @@ bool positiveHorizontal() {
  * Calls getcells() with a negative horizontal slope.
  */
 bool negativeHorizontal() {
-	std::pair<double,double> origin = make_pair(5.0,1.0),
+	std::pair<int,int> origin = make_pair(5.0,1.0),
 							 target = make_pair(1.0,1.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(1,1),
 											make_pair(2,1),
 											make_pair(3,1),
@@ -149,9 +149,9 @@ bool negativeHorizontal() {
  * Calls getcells() with a positive vertical slope.
  */
 bool positiveVertical() {
-	std::pair<double,double> origin = make_pair(1.0,1.0),
+	std::pair<int,int> origin = make_pair(1.0,1.0),
 							 target = make_pair(1.0,5.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(1,2),
 											make_pair(1,3),
 											make_pair(1,4),
@@ -164,9 +164,9 @@ bool positiveVertical() {
  * Calls getcells() with a negative vertical slope.
  */
 bool negativeVertical() {
-	std::pair<double,double> origin = make_pair(1.0,5.0),
+	std::pair<int,int> origin = make_pair(1.0,5.0),
 							 target = make_pair(1.0,1.0);
-	std::set<std::pair<double,double>>  solution = {
+	std::set<std::pair<int,int>>  solution = {
 											make_pair(1,1),
 											make_pair(1,2),
 											make_pair(1,3),
@@ -179,9 +179,9 @@ bool negativeVertical() {
  * Calls getcells() with duplicate points.
  */
 bool duplicatePoint() {
-	std::pair<double,double> origin = make_pair(1.0,1.0),
+	std::pair<int,int> origin = make_pair(1.0,1.0),
 							 target = make_pair(1.0,1.0);
-	std::set<std::pair<double,double>> pairs = getCells(&origin, &target);
+	std::set<std::pair<int,int>> pairs = getCells(&origin, &target);
 	if (pairs.size()==0) {
 		return true;
 	}
@@ -189,4 +189,5 @@ bool duplicatePoint() {
 	cout<<"Expected: size 0.\n";
 	cout<<"Recieved: size "<<pairs.size()<<".\n";
 	printSet(&pairs);
+	return false;
 }

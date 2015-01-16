@@ -15,8 +15,8 @@ class Graph {
 		string contourDataFile;
 		Grid* grid;
 		Graph(Grid* g);
-		void printContour(int contourLevels[]);
-		void  printContourGraph(int width, int height);
+		void printContour(double *contourLevels);
+		void  printContourGraph(int width, int height, double *contourLevels);
 		void writeDat();
 		void writeMat();
 };

@@ -40,7 +40,7 @@ double bivariateNorm(double x, double y, double mux, double muy, double sdx, dou
  * @param x The value to check.
  */
 double vHabitat(double x) {
-	if (x >= acousticParams["mindepth"] && x <= acousticParams["maxdepth"]) {
+	if (x >= stod(acousticParams["mindepth"]) && x <= stod(acousticParams["maxdepth"])) {
 		return x;
 	}
 	return 0;
@@ -50,13 +50,13 @@ double vHabitat(double x) {
 void fish(Grid* topographyGrid, Grid* behaviorGrid) {
 	int rows = topographyGrid->rows;
 	int cols = topographyGrid->cols;
-	int cellSize = acousticParams["cellSize"];
-	double ousdx = acousticParams["ousdx"],
-		   ousdy = acousticParams["ousdy"],
-		   oucor = acousticParams["oucor"],
-		   mux 	 = acousticParams["mux"],
-		   muy   = acousticParams["muy"];
-	double fishmodel = acousticParams["fishmodel"];
+	int cellSize = stoi(acousticParams["cellSize"]);
+	double ousdx = stod(acousticParams["ousdx"]),
+		   ousdy = stod(acousticParams["ousdy"]),
+		   oucor = stod(acousticParams["oucor"]),
+		   mux 	 = stod(acousticParams["mux"]),
+		   muy   = stod(acousticParams["muy"]);
+	double fishmodel = stod(acousticParams["fishmodel"]);
 
 	//RW
 	if (fishmodel == 0){

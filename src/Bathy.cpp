@@ -60,7 +60,7 @@ Grid* simulatetopographyGrid(int XDist, int YDist) {
 }
 
 
-Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t startY, size_t XDist, size_t YDist, string seriesName, long timestamp) {
+Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t startY, size_t XDist, size_t YDist, string seriesName, string timestamp) {
 	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
 
    // This will be the netCDF ID for the file and data variable.
@@ -97,7 +97,7 @@ Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t sta
 	}
 
 	topographyGrid->clearNA();
-	if (acousticParams["debug"] == 1) {
+	if (acousticParams["debug"] == "1") {
 		//topographyGrid->printData();
 		cout<<"startx "<< startX <<"\nXDist: "<<XDist<< "\nstartY: "<<startY<<"\nYDist: "<<YDist<<"\n";
 		cout<<"inputFileType: "<< inputFileType <<"\ninputFile: "<<inputFile<< "\nseriesName: "<<seriesName<<"\n";

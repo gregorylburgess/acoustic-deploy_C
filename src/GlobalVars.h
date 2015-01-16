@@ -3,4 +3,4 @@
 #include <unordered_map>
 using namespace std;
 
-extern unordered_map <string, double> acousticParams;
+extern unordered_map <string, string> acousticParams;
