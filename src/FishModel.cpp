@@ -36,16 +36,26 @@ double bivariateNorm(double x, double y, double mux, double muy, double sdx, dou
 
 
 /**
- * Checks if x is between the parameters 'mindepth' and 'maxdepth', returning 0 if it isn't.
+ * Checks if x is non-negative, returning 1 if it is, and zero otherise.
  * @param x The value to check.
  */
-double vHabitat(double x) {
-	if (x >= stod(acousticParams["mindepth"]) && x <= stod(acousticParams["maxdepth"])) {
-		return x;
+double isNonNeg(double x) {
+	if (x >= 0) {
+		return 1;
 	}
 	return 0;
 }
 
+/**
+ * Checks if x is non-positive, returning 1 if it is, and zero otherise.
+ * @param x The value to check.
+ */
+double isNonPos(double x) {
+	if (x <= 0) {
+		return 1;
+	}
+	return 0;
+}
 
 void fish(Grid* topographyGrid, Grid* behaviorGrid) {
 	int rows = topographyGrid->rows;
@@ -96,8 +106,24 @@ void fish(Grid* topographyGrid, Grid* behaviorGrid) {
 			}
 		}
 	}
-	if(acousticParams.count("mindepth")==1 && acousticParams.count("maxdepth")==1) {
-		behaviorGrid->data.unaryExpr(ptr_fun(vHabitat));
+	//Vertical Habitat Restrictions
+	if(acousticParams.count("minDepth") > 0 && acousticParams.count("maxDepth") > 0) {
+		cout << "Using Vertical Habitat Restrictions: \nminDepth: " << acousticParams["minDepth"] << "m\nmaxDepth: " << acousticParams["maxDepth"] << "m\n";
+		Grid* minGrid = new Grid(behaviorGrid->cols, behaviorGrid->rows, "min");
+		Grid* maxGrid = new Grid(behaviorGrid->cols, behaviorGrid->rows, "max");
+		Grid* temp = new Grid(behaviorGrid->cols, behaviorGrid->rows, "temp");
+		//Add the minDepth to the topographyGrid (a copy, the original values are unmodified)
+		minGrid->data = topographyGrid->data.array() + stod(acousticParams["minDepth"]);
+		//Any non-positive values are valid, store a 1 there
+		minGrid->data = minGrid->data.unaryExpr(ptr_fun(isNonPos));
+		//Add teh maxDepth to the topographyGrid (again, a copy)
+		maxGrid->data = topographyGrid->data.array() + stod(acousticParams["maxDepth"]);
+		//Any non-negative values are valid, store a 1
+		maxGrid->data = maxGrid->data.unaryExpr(ptr_fun(isNonNeg));
+		//Multiply the two zero-one matricies to get cells with values between the min and max depths
+		temp->data = minGrid->data.cwiseProduct(maxGrid->data);
+		//Mask the behaviorGrid with our validitiy matrix
+		behaviorGrid->data = behaviorGrid->data.cwiseProduct(temp->data);
 	}
 	//convert the grid to a probaility matrix
 	double sum = behaviorGrid->data.sum();

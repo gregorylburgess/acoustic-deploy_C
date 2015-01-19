@@ -11,7 +11,7 @@
 #include "Grid.h"
 #include "Utility.h"
 
-void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, double bias, double range) {
+void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, int bias, int range) {
 	if (bias == 1) {
 		goodFish(topographyGrid, behaviorGrid, goodnessGrid, range);
 	}

@@ -13,7 +13,7 @@ using namespace std;
 Graph::Graph(Grid* g) {
 	contour = false;
 	grid = g;
-	contourDataFile = "data/" + grid->name + "_contour.dat";
+	contourDataFile = "data/contour.dat";
 	inputDatFile = "data/" + grid->name + ".dat";
 	inputMatFile = "data/" + grid->name + ".mat";
 }
@@ -78,7 +78,7 @@ void Graph::printContour(double *contourLevels) {
  * Requires that a contour file for the existing file exists.
  */
 void  Graph::printContourGraph(int width, int height, double *contourLevels) {
-	cout << "\n\nPrinting contour graph...\n";
+	cout << "\n\nPrinting " << grid->name << " graph...\n";
 	int i = 0, numOfLevels = stoi(acousticParams["numContourDepths"]);
 	double  xstart = -.5,
 			ystart = -.5;
@@ -86,6 +86,11 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 	string  filetype = ".gif",
 			outfile = "img/" + grid->name + filetype,
 			setOuput = "set output \'" + outfile + "\';",
+			//setScale = "set logscale cb;",
+			setScale = "set autoscale y",
+			setCBRange = "set cbrange[" + to_string(grid->data.minCoeff()) + ":" + to_string(grid->data.maxCoeff()) + "];",
+			sensorLabelColor = "white",
+			sensorIconColor = "blue",
 			xrange,
 			yrange,
 			size,
@@ -96,6 +101,8 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 		cout << "Output File: " << outfile << "\n";
 		cout << "Data File: " << inputDatFile << "\n";
 		cout << "Matrix File: " << inputMatFile << "\n";
+		cout << setScale << "\n";
+		cout << setCBRange << "\n";
 	}
 
 	if (!fexists(inputDatFile)) {
@@ -107,6 +114,9 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 		cout << "Input .mat File not Found!\n";
 		throw 1;
 	}
+	//Set y-axis scale type & min/max values
+	ss << setScale << "\n";
+	//ss << setCBRange;
 
 	//Set x/y range values
 	ss << "set yrange [" << ystart << ":" << grid->rows - 0.5 << "];";
@@ -118,6 +128,15 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 	xrange = ss.str();
 	ss.str("");
 	ss.clear();
+	//TODO
+	/*
+	//Define labels for sensors
+	for () {
+		xloc = ;
+		yloc = ;
+		ss << "set label \"" + i + "\" at " << xloc << "," << yloc << " front center tc rgb \"" << sensorLabelColor << "\"\n";
+	}
+	*/
 
 	//plot command
 	ss << "plot \"" << inputMatFile << "\" matrix with image,";
@@ -127,9 +146,18 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 		ss << " \"" << contourDataFile << "\" index " << i << " with line title \""
 					<< contourLevels[numOfLevels - i -1] <<"\" ls " << i + 1 << ",";
 	}
-
+	//TODO
+	 /*
 	//add sensor icons
-	 ss << "\'-\' using 1:2:3 with circles lc rgb \"blue\" fs solid title \"Sensors\"";
+	 ss << "\'-\' using 1:2:3 with circles lc rgb \"" << sensorIconColor << "\" fs solid title \"Sensors\"";
+
+	 //Specify each circle location as a triplet
+	for () {
+	  	  // circle format is x-loc y-loc radius
+		 ss << ""
+	 }
+	 */
+
 	//finalize string
 	plotData = ss.str();
 	ss.str("");
@@ -146,7 +174,7 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 		//plots.cmd(size);
 		if(acousticParams["debug"] == "1") {
 			cout << setOuput << "\n";
-			cout << "set terminal gif\n";
+			cout << "set terminal gif;\n";
 			cout << xrange << "\n";
 			cout << yrange << "\n";
 			cout << size << "\n";
