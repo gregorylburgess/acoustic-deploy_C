@@ -37,7 +37,6 @@ void Graph::printContour(double *contourLevels) {
 		   pm3d = "set pm3d map",
 		   plot;
 	int i=0, numLevels = stoi(acousticParams["numContourDepths"]);
-	cout << numLevels << "\n";
 	//Print to a table instead of a gif
 	plots.cmd(setOutput);
 	//Enable contour lines
@@ -90,6 +89,8 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 			setScale = "set autoscale y",
 			setCBRange = "set cbrange[" + to_string(grid->data.minCoeff()) + ":" + to_string(grid->data.maxCoeff()) + "];",
 			sensorLabelColor = "white",
+			setLegendColor = "set key textcolor rgb \"#00aa00\"",
+			setLegendFont = "set key font \",12\"",
 			sensorIconColor = "blue",
 			xrange,
 			yrange,
@@ -144,7 +145,7 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 	//add contour lines
 	for (i=0; i<numOfLevels; i++) {
 		ss << " \"" << contourDataFile << "\" index " << i << " with line title \""
-					<< contourLevels[numOfLevels - i -1] <<"\" ls " << i + 1 << ",";
+					<< contourLevels[numOfLevels - i -1] <<"m\" ls " << i + 1 << ",";
 	}
 	//TODO
 	 /*
@@ -169,6 +170,8 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 		plots.cmd("set terminal gif;");
 		plots.cmd("set term gif small;");
 		plots.cmd("set style line 1 lt 1 lw 1;");
+		plots.cmd(setLegendColor);
+		plots.cmd(setLegendFont);
 		plots.cmd(xrange);
 		plots.cmd(yrange);
 		//plots.cmd(size);
@@ -182,7 +185,7 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 			cout << plotData << "\n";
 		}
 		plots.cmd(plotData);
-		cout <<"\nFinished writing graph data files" << "\n";
+		cout <<"Finished writing graph data files" << "\n";
 	}
 	catch (GnuplotException ge) {
 	        cout << ge.what() << endl;

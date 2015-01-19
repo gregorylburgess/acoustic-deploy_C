@@ -20,7 +20,7 @@ int main() {
 
 	acousticParams.insert({"cellSize","5"});
 	acousticParams.insert({"fishmodel","0"});
-	acousticParams.insert({"sensorRange","5"});
+	acousticParams.insert({"sensorRange","50"});
 	acousticParams.insert({"bias","2"});
 
 	acousticParams.insert({"ousdx",".1"});
@@ -31,7 +31,7 @@ int main() {
 	acousticParams.insert({"fishmodel","1"});
 	acousticParams.insert({"contourDepths","0,-5,-15,-10"});
 	acousticParams.insert({"minDepth","15"});
-	acousticParams.insert({"maxDepth","50"});
+	acousticParams.insert({"maxDepth","20"});
 
 	string  inputFile = "himbsyn.bathytopo.1km.v19.grd",
 			inputFileType="netcdf",
