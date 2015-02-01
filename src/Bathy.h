@@ -12,8 +12,8 @@
 
 
 Grid* simulatetopographyGrid(int XDist, int YDist);
-Grid* getBathy(std::string inputFile, std::string inputFileType, int startX, int startY,
-			  int XDist, int YDist, std::string seriesName, std::string timestamp);
+Grid* getBathy(std::string inputFile, std::string inputFileType, size_t startX, size_t startY,
+		size_t XDist, size_t YDist, std::string seriesName, std::string timestamp);
 double zero(double x);
 
 

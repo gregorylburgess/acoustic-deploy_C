@@ -78,8 +78,8 @@ Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t sta
 	   }
 	   // Read the data.
 	   try {
-		   static size_t start[] = {startX, startY};
-		   static size_t range[] = {XDist, YDist};
+		   static size_t start[] = {startY, startX};
+		   static size_t range[] = {YDist, XDist};
 		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid->data.data());
 	   }
 	   catch (int i) {
@@ -97,6 +97,8 @@ Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t sta
 	}
 
 	topographyGrid->clearNA();
+	topographyGrid->data.transposeInPlace();
+	//topographyGrid->data = topographyGrid->data.colwise().reverse();
 	if (acousticParams["debug"] == "1") {
 		//topographyGrid->printData();
 		cout<<"startx "<< startX <<"\nXDist: "<<XDist<< "\nstartY: "<<startY<<"\nYDist: "<<YDist<<"\n";

@@ -47,7 +47,7 @@ double isNonNeg(double x) {
 }
 
 /**
- * Checks if x is non-positive, returning 1 if it is, and zero otherise.
+ * Checks if x is non-positive, returning 1 if it is, and zero otherwise.
  * @param x The value to check.
  */
 double isNonPos(double x) {
@@ -57,7 +57,7 @@ double isNonPos(double x) {
 	return 0;
 }
 
-void fish(Grid* topographyGrid, Grid* behaviorGrid) {
+void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
 	int rows = topographyGrid->rows;
 	int cols = topographyGrid->cols;
 	int cellSize = stoi(acousticParams["cellSize"]);
@@ -97,7 +97,7 @@ void fish(Grid* topographyGrid, Grid* behaviorGrid) {
 		XY.col(1) = Y;
 
 		Eigen::Matrix2d hrCov;
-		hrCov << vary,covxy,covxy,varx; //2d comma initalizer shortcut from Eigen
+		hrCov << vary,covxy,covxy,varx; //2d comma initializer shortcut from Eigen
 		double temp;
 		for(double i=0; i<cols; i++) {
 			for(double j=0; j<rows; j++) {
@@ -116,16 +116,16 @@ void fish(Grid* topographyGrid, Grid* behaviorGrid) {
 		minGrid->data = topographyGrid->data.array() + stod(acousticParams["minDepth"]);
 		//Any non-positive values are valid, store a 1 there
 		minGrid->data = minGrid->data.unaryExpr(ptr_fun(isNonPos));
-		//Add teh maxDepth to the topographyGrid (again, a copy)
+		//Add the maxDepth to the topographyGrid (again, a copy)
 		maxGrid->data = topographyGrid->data.array() + stod(acousticParams["maxDepth"]);
 		//Any non-negative values are valid, store a 1
 		maxGrid->data = maxGrid->data.unaryExpr(ptr_fun(isNonNeg));
-		//Multiply the two zero-one matricies to get cells with values between the min and max depths
+		//Multiply the two zero-one matrices to get cells with values between the min and max depths
 		temp->data = minGrid->data.cwiseProduct(maxGrid->data);
-		//Mask the behaviorGrid with our validitiy matrix
+		//Mask the behaviorGrid with our validity matrix
 		behaviorGrid->data = behaviorGrid->data.cwiseProduct(temp->data);
 	}
-	//convert the grid to a probaility matrix
+	//convert the grid to a probability matrix
 	double sum = behaviorGrid->data.sum();
     behaviorGrid->data = behaviorGrid->data / sum;
 }

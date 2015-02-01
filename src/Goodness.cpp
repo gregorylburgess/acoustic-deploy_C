@@ -92,15 +92,15 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
 	}
 
 
-std::pair<int,int> offset (std::pair<int,int> *point) {
-	std::pair<int,int> newPoint = std::make_pair(point->first+.5,point->second+.5);
+pair<int,int> offset (const pair<int,int> *point) {
+	pair<int,int> newPoint = make_pair(point->first+.5,point->second+.5);
 	return newPoint;
 }
 /**
  * Gets a set of cell locations that intersect a beam between the origin cell and a target cell. Pairs are configured as (x,y), (column,row).
  */
-std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <int,int> *target) {
-	std::set<std::pair<int,int> > pairs;
+set<pair<int,int>> getCells(const pair <int,int> *origin, const pair <int,int> *target) {
+	set<pair<int,int> > pairs;
 
 	//Calculate the slope
 	double ox=origin->first, oy=origin->second, tx=target->first,ty=target->second;
@@ -108,7 +108,7 @@ std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <in
 		double m = (ty - oy) / (tx - ox);
 		double absm = abs(m);
 		//Handle INF/NAN values.
-		if(absm == std::numeric_limits<double>::infinity()) {
+		if(absm == numeric_limits<double>::infinity()) {
 			if(m>0) {
 				m = 999999;
 			}
@@ -118,7 +118,7 @@ std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <in
 			absm = abs(m);
 		}
 		// assume the sensor is in the middle of the cell
-		std::pair<int,int> offsetO = offset(origin);
+		pair<int,int> offsetO = offset(origin);
 		double b = offsetO.second - m * offsetO.first;
 		double lowerX = min(ox, tx);
 		double upperX = max(ox, tx);
@@ -137,8 +137,8 @@ std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <in
 				x = (y - b) / m;
 				x1 = floor(x);
 				//cout<<"Y: "<<y <<", X: "<<x<<";  added("<<x1<<","<<y-1<<") and ("<<x1<<","<<y<<")\n";
-				pairs.insert(std::make_pair(x1, y-1));
-				pairs.insert(std::make_pair(x1, y));
+				pairs.insert(make_pair(x1, y-1));
+				pairs.insert(make_pair(x1, y));
 			}
 		}
 		//Slow Slopes
@@ -146,8 +146,8 @@ std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <in
 			for(x = startX+1; x <= endX; x++) {
 				y = m * x + b;
 				y1 = floor(y);
-				pairs.insert(std::make_pair(x-1, y1));
-				pairs.insert(std::make_pair(x, y1));
+				pairs.insert(make_pair(x-1, y1));
+				pairs.insert(make_pair(x, y1));
 			}
 		}
 		//Slope == 1
@@ -156,7 +156,7 @@ std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <in
 			endX = upperX;
 			for(x = startX; x <= endX; x++) {
 				y = m * x + b;
-				pairs.insert(std::make_pair(x, y));
+				pairs.insert(make_pair(x, y));
 			}
 		}
 		if(pairs.size()>0) {
@@ -173,10 +173,8 @@ std::set<std::pair<int,int>> getCells(std::pair <int,int> *origin, std::pair <in
 /**
  * Calculates the visibility Grid for a cell at r,c on the topographyGrid.  Should be a grid containing the max visible depth.
  */
-Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int rng) {
+Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int r, int c, int rng) {
 	int size = 2 * rng + 1;
-	std::pair<int,int> origin = make_pair(rng,rng);
-	std::pair<int,int> target;
 	Eigen::MatrixXd slopeGrid;
 	Eigen::MatrixXd slopeReference;
 	Eigen::MatrixXd vizGrid;
@@ -186,7 +184,7 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int
 	//Vectors from -rng to rng, of length size
 	Eigen::VectorXd refx = refx.LinSpaced(size, -rng, rng);
 	Eigen::VectorXd refy = refy.LinSpaced(size, -rng, rng);
-	std::set<std::pair<int,int>> cells;
+	set<pair<int,int>> cells;
 
 	Y = refy.replicate(1,size);
 	X = refx.replicate(1,size);
@@ -198,52 +196,38 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int rStart, int cStart, int
 	slopeGrid(rng,rng) = 1;
 
 	//copy out the block of topography we're interested in.
-	localTopo = topographyGrid->data.block(rStart, cStart, size, size);
+	localTopo = topographyGrid->data.block(r, c, size, size);
+	//assign dimensions, and set all values in vizGrid to the center cell's depth
 	vizGrid.resize(size,size);
-	double val = localTopo(rng,rng);
-	vizGrid.setConstant(val);
+	vizGrid.setConstant(localTopo(rng,rng));
 	//vizGrid now contains the depth deltas from the origin cell
 	vizGrid = localTopo - vizGrid;
 	//slopeGrid now contains depth deltas divided by distance deltas, aka the slope from the center cell to each cell.
 	slopeGrid = vizGrid.cwiseQuotient(slopeGrid);
-	//Copy the slopeGrid to a reference Grid, as we'll reorder slopeGrid.
-	slopeReference.resize(size,size);
-	memcpy(slopeReference.data(),slopeGrid.data(),slopeGrid.size() * sizeof(double));
 
-	//Sort the data of slopeGrid by slope (result is column major).
-	std::sort(slopeGrid.data(), slopeGrid.data() + slopeGrid.size());
-
-	double *start = slopeGrid.data();
-	int gridSize = slopeGrid.size();
+	/** slopeGrid now has the slope from all cells to the center
+	 *  viz grid has depth deltas
+	 */
 	//for each cell in the grid, calculate the intervening cells between the current cell and the origin.
-	for (int r = 0; r<size; r++) {
-		for (int c = 0; c<size; c++) {
-			target = make_pair(r,c);
-			cells = getCells(&origin, &target);
-			cout<<"Cells for R:"<<r<<" C:"<<c<<"\n";
-			//std::set<std::pair<int,int>>* ce = &cells;
-			printSet(&cells);
-			double* locPtr = 0;
-			int maxLoc = 0;
-			int row = 0;
-			int col = 0;
-			int loc = 0;
-			double val = 0;
-			std::set<std::pair<int,int>>::iterator it;
-			cout<<"\n";
-			for (it = cells.begin(); it != cells.end(); it++) {
-				row =  it->first;
-				col =  it->second;
 
-				cout<<"row:"<<r<<"\ncol:"<<c<<"\n";
-				//RUNTIME ERROR probably related to teh memcpy call on the slopeReference Matrix.
-				val = slopeReference(row, col);
-				locPtr = std::find(start, start + gridSize, val);
-				loc = locPtr - start;
-				if(loc > maxLoc) {
-					maxLoc = loc;
-				}
-			}
+	set <pair<int,int>> unprocessedCells;
+	int i=0, j=0;
+	for(i=0;i<size;i++) {
+		for (j=0;j<size;j++)
+			unprocessedCells.insert((const pair<int,int>) make_pair(i,j));
+
+	}
+	pair<int,int> cellToProcess;
+	pair<int,int> origin = make_pair(rng,rng);
+	set<pair<int,int>> interveningCells;
+	double maxSlope=0;
+	while (unprocessedCells.size() > 0) {
+		interveningCells = getCells(&origin, &*unprocessedCells.cbegin());
+		maxSlope = 0;
+		for (auto iterator=interveningCells.cbegin(); iterator!= interveningCells.cend(); ++iterator) {
+			maxSlope = max(maxSlope, slopeGrid(iterator->first,iterator->second));
+			slopeGrid(iterator->first,iterator->second) = maxSlope;
+			unprocessedCells.erase(*iterator);
 		}
 	}
 	return slopeReference;

@@ -18,7 +18,7 @@ Graph::Graph(Grid* g) {
 	inputMatFile = "data/" + grid->name + ".mat";
 }
 /**
- * Creates a data file containing contour lines, which can be overlayed onto another graph.
+ * Creates a data file containing contour lines, which can be overlaid onto another graph.
  * Call this BEFORE calling printContourGraph().
  * @param title The title of the data file to generate.
  * @param contourLevels An array of integers holding contour levels (depth as a negative integer).
