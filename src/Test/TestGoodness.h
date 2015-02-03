@@ -4,6 +4,7 @@
 using namespace std;
 
 bool runGoodnessTests();
+bool checkCalcPercentViz();
 bool check(std::pair<double,double> *origin, std::pair<double,double> *target, std::set<std::pair<double,double>> *solution, string errorMsg);
 bool positiveSteep();
 bool negativeSteep();

@@ -11,6 +11,20 @@
 #include "Grid.h"
 #include "Utility.h"
 
+class sortByDist {
+	public:
+		int r, c;
+		sortByDist(int r, int c) : r(r), c(c){}
+
+		double distDelta(pair<int,int> point) {
+			return sqrt(pow(r-(point.first),2)+pow(c-(point.second),2));
+		}
+
+		bool operator() (pair<int,int> lhs, pair<int,int> rhs) {
+			return distDelta(lhs) < distDelta(rhs);
+		}
+};
+
 void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, int bias, int range) {
 	if (bias == 1) {
 		goodFish(topographyGrid, behaviorGrid, goodnessGrid, range);
@@ -99,35 +113,38 @@ pair<int,int> offset (const pair<int,int> *point) {
 /**
  * Gets a set of cell locations that intersect a beam between the origin cell and a target cell. Pairs are configured as (x,y), (column,row).
  */
-set<pair<int,int>> getCells(const pair <int,int> *origin, const pair <int,int> *target) {
+vector<pair<int,int>> getCells(const pair <int,int> *origin, const pair <int,int> *target) {
 	set<pair<int,int> > pairs;
-
 	//Calculate the slope
-	double ox=origin->first, oy=origin->second, tx=target->first,ty=target->second;
-	if(origin!=target) {
-		double m = (ty - oy) / (tx - ox);
-		double absm = abs(m);
+	int ox=origin->first, oy=origin->second, tx=target->first,ty=target->second;
+	if(ox!=tx || oy!=ty) {
+		double slopeNumerator = (ty - oy),
+			   slopeDenominator = (tx - ox),
+			   m = 0;
 		//Handle INF/NAN values.
-		if(absm == numeric_limits<double>::infinity()) {
-			if(m>0) {
+		if(slopeDenominator == 0) {
+			if(slopeNumerator > 0) {
 				m = 999999;
 			}
 			else {
 				m = -999999;
 			}
-			absm = abs(m);
 		}
+		else {
+			m = slopeNumerator/slopeDenominator;
+		}
+		double absm = abs(m);
 		// assume the sensor is in the middle of the cell
 		pair<int,int> offsetO = offset(origin);
 		double b = offsetO.second - m * offsetO.first;
-		double lowerX = min(ox, tx);
-		double upperX = max(ox, tx);
-		double lowerY = min(oy, ty);
-		double upperY = max(oy, ty);
-		double startX = lowerX, endX = upperX;
-		double startY = lowerY, endY = upperY;
-		double y = 0, y1 = 0;
-		double x = 0, x1 = 0;
+		int lowerX = min(ox, tx);
+		int upperX = max(ox, tx);
+		int lowerY = min(oy, ty);
+		int upperY = max(oy, ty);
+		int startX = lowerX, endX = upperX;
+		int startY = lowerY, endY = upperY;
+		int y = 0, y1 = 0;
+		int x = 0, x1 = 0;
 
 		//====================================Calculate Cells==============================================
 		//Steep Slopes
@@ -165,18 +182,31 @@ set<pair<int,int>> getCells(const pair <int,int> *origin, const pair <int,int> *
 		}
 		pairs.insert(*target);
 		pairs.erase(*origin);
-	}
-	return pairs;
 
+		//copy to vector
+		vector<pair<int,int>> vpairs(pairs.begin(), pairs.end());
+		//Sort pairs by distance from origin
+		sortByDist sorter(origin->first,origin->second);
+		sort(vpairs.begin(),vpairs.end(),sorter);
+		//cout<< "Returning vector of size "<<vpairs.size()<<"\n";
+
+		return vpairs;
+	}
+	else {
+		vector<pair<int,int>> vpairs;
+		return vpairs;
+	}
 }
 
 /**
  * Calculates the visibility Grid for a cell at r,c on the topographyGrid.  Should be a grid containing the max visible depth.
  */
 Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int r, int c, int rng) {
-	int size = 2 * rng + 1;
+	int size = 2 * rng + 1,
+		i=0,
+		j=0;
 	Eigen::MatrixXd slopeGrid;
-	Eigen::MatrixXd slopeReference;
+	Eigen::MatrixXd solutionGrid;
 	Eigen::MatrixXd vizGrid;
 	Eigen::MatrixXd localTopo;
 	Eigen::MatrixXd X;
@@ -184,7 +214,7 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int r, int c, int rng) {
 	//Vectors from -rng to rng, of length size
 	Eigen::VectorXd refx = refx.LinSpaced(size, -rng, rng);
 	Eigen::VectorXd refy = refy.LinSpaced(size, -rng, rng);
-	set<pair<int,int>> cells;
+	vector<pair<int,int>> cells;
 
 	Y = refy.replicate(1,size);
 	X = refx.replicate(1,size);
@@ -196,40 +226,57 @@ Eigen::MatrixXd calcPercentViz(Grid* topographyGrid, int r, int c, int rng) {
 	slopeGrid(rng,rng) = 1;
 
 	//copy out the block of topography we're interested in.
-	localTopo = topographyGrid->data.block(r, c, size, size);
+	localTopo = topographyGrid->data.block(r-rng, c-rng, size, size);
 	//assign dimensions, and set all values in vizGrid to the center cell's depth
 	vizGrid.resize(size,size);
+	solutionGrid.resize(size,size);
 	vizGrid.setConstant(localTopo(rng,rng));
 	//vizGrid now contains the depth deltas from the origin cell
 	vizGrid = localTopo - vizGrid;
 	//slopeGrid now contains depth deltas divided by distance deltas, aka the slope from the center cell to each cell.
 	slopeGrid = vizGrid.cwiseQuotient(slopeGrid);
-
+	//cout << slopeGrid <<"\n\n";
 	/** slopeGrid now has the slope from all cells to the center
 	 *  viz grid has depth deltas
 	 */
-	//for each cell in the grid, calculate the intervening cells between the current cell and the origin.
 
 	set <pair<int,int>> unprocessedCells;
-	int i=0, j=0;
+	vector<pair<int,int>> interveningCells;
+	pair<int,int> origin = make_pair(rng,rng);
+	double maxSlope=0;
 	for(i=0;i<size;i++) {
 		for (j=0;j<size;j++)
 			unprocessedCells.insert((const pair<int,int>) make_pair(i,j));
 
 	}
-	pair<int,int> cellToProcess;
-	pair<int,int> origin = make_pair(rng,rng);
-	set<pair<int,int>> interveningCells;
-	double maxSlope=0;
+	//cout<<"Added cells to process\n";
+	unprocessedCells.erase(origin);
+	maxSlope=0;
 	while (unprocessedCells.size() > 0) {
+		//cout<<"Getting cells\n";
+		//cout<<unprocessedCells.cbegin()->first <<","<<unprocessedCells.cbegin()->second;
 		interveningCells = getCells(&origin, &*unprocessedCells.cbegin());
-		maxSlope = 0;
-		for (auto iterator=interveningCells.cbegin(); iterator!= interveningCells.cend(); ++iterator) {
-			maxSlope = max(maxSlope, slopeGrid(iterator->first,iterator->second));
-			slopeGrid(iterator->first,iterator->second) = maxSlope;
-			unprocessedCells.erase(*iterator);
+		//cout<<"\nGot cells\n";
+		if(interveningCells.size() > 0) {
+			auto iterator = interveningCells.cbegin();
+			pair<int,int> it = *iterator;
+			//cout<<"Getting slope\n";
+			i=it.first;
+			j=it.second;
+			//cout<<"Getting "<<i<<","<<j<<"\n";
+			maxSlope = slopeGrid(i,j);
+			//cout<<"Processing cells\n";
+			for (auto iterator = interveningCells.begin(); iterator != interveningCells.cend(); ++iterator) {
+				//cout << iterator->first << "," << iterator->second << "\n";
+				maxSlope = max(maxSlope, slopeGrid(iterator->first,iterator->second));
+				solutionGrid(iterator->first,iterator->second) = maxSlope;
+				unprocessedCells.erase(*iterator);
+			}
+			//cout<<"Erasing extra cell \n";
+			unprocessedCells.erase(*interveningCells.crend());
 		}
 	}
-	return slopeReference;
+	//cout<<"Returning";
+	return solutionGrid;
 }
 
