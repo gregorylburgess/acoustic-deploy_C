@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <iostream>
 #include "Bathy.h"
@@ -8,17 +9,18 @@
 #include "Graph.h"
 #include "GlobalVars.h"
 #include "Test/Test.h"
+#include <sys/time.h>
 using namespace std;
 
 
 int main() {
-	bool test = true;
+	bool test = false;
+	bool simulateBathy = false;
 	if (test) {
 		runTests();
 		cout <<"Done";
 	}
 	else {
-		bool simulateBathy = false;
 		acousticParams.insert({"debug","0"});
 
 		acousticParams.insert({"cellSize","5"});
@@ -44,16 +46,19 @@ int main() {
 		acousticParams.insert({"timestamp","-1"});
 
 		//TODO: Data validation
-		int startX = 350,
-			startY = 400,
-			XDist = 100,
-			YDist = 100,
-			width = 500,
-			height = 500,
+		int startCol = 100,
+			startRow = 100,
+			ColDist = 500,
+			RowDist = 300,
+			width = 1000,
+			height = 1000,
 			i=0,
 			bias = 3,
-			sensorRange = 5;
+			sensorRange = 2;
 		string token;
+		border = sensorRange;
+		struct timeval start, end;
+
 		//Compute contour depth meta data (used for graphical output)
 		istringstream contourString(acousticParams["contourDepths"]);
 		size_t numContourDepths = std::count(acousticParams["contourDepths"].begin(), acousticParams["contourDepths"].end(), ',') + 1;
@@ -82,26 +87,32 @@ int main() {
 				coverageFilePath = outputDataFilePath + coverageTitle + outputDataFileType;
 
 
-		Grid* bGrid = new Grid(XDist, YDist, "Behavior");
-		Grid* gGrid = new Grid(XDist, YDist, "Goodness");
-		Grid* cGrid = new Grid(XDist, YDist, "Coverage");
-		Grid* tGrid;
-
+		Grid* bGrid = new Grid(RowDist + 2 * border, ColDist + 2 * border, "Behavior");
+		Grid* gGrid = new Grid(RowDist + 2 * border, ColDist + 2 * border, "Goodness");
+		//Grid* cGrid = new Grid(RowDist + 2* border, ColDist + 2 * border, "Coverage");
+		Grid* tGrid= new Grid(RowDist + 2 * border, ColDist + 2 * border, "Topography");
+		cout<<"M0";
 		//Fetch or simulate topography
 		if(simulateBathy) {
-			tGrid = simulatetopographyGrid(XDist,YDist);
+			simulatetopographyGrid(tGrid, RowDist,ColDist);
 		}
 		else {
-			tGrid = getBathy(acousticParams["inputFile"], acousticParams["inputFileType"],  size_t(startX),
-					 size_t(startY), size_t(XDist),  size_t(YDist), acousticParams["seriesName"], acousticParams["timestamp"]);
+			getBathy(tGrid, acousticParams["inputFile"], acousticParams["inputFileType"],  size_t(startRow),
+					 size_t(startCol), size_t(RowDist),  size_t(ColDist), acousticParams["seriesName"], acousticParams["timestamp"]);
 		}
-
+		cout<<"M1";
 		//Fill in Behavior Grid
 		populateBehaviorGrid(tGrid, bGrid);
-
+		cout<<"M2";
+		gettimeofday(&start,NULL);
+		cout<<"CPV";
 		//Calculate good sensor locations
 		calculateGoodnessGrid(tGrid, bGrid, gGrid, bias, sensorRange);
-
+		cout<<"EndCPV";
+		gettimeofday(&end,NULL);
+		printf("\n%f\n",
+			 (end.tv_sec*1000000.0 + end.tv_usec -
+			  start.tv_sec*1000000.0 - start.tv_usec) / 1000000.0);
 		Graph gGraph = Graph(gGrid);
 		Graph tGraph = Graph(tGrid);
 		Graph bGraph = Graph(bGrid);
@@ -137,12 +148,12 @@ int main() {
 		}
 
 
-
+/*
 		Grid* temp = new Grid(calcPercentViz(tGrid, 30,30,2),"temp");
 		cout<<tGrid->data.block(30, 30, 5, 5);
 		cout << "\n";
 		temp->printData();
-	}
+*/	}
 	return 0;
 }
 

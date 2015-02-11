@@ -30,14 +30,12 @@ double zero(double x) {
 }
 
 
-Grid* simulatetopographyGrid(int XDist, int YDist) {
-	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
-	Eigen::MatrixXd data = topographyGrid->data;
-	Eigen::VectorXd refx = refx.LinSpaced(XDist,-2*M_PI, 2*M_PI);
-	Eigen::VectorXd refy = refx.LinSpaced(YDist,-2*M_PI, 2*M_PI);
-	Eigen::MatrixXd X = refx.replicate(1,YDist);
+void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
+	Eigen::VectorXd refx = refx.LinSpaced(numCols,-2*M_PI, 2*M_PI);
+	Eigen::VectorXd refy = refx.LinSpaced(numRows,-2*M_PI, 2*M_PI);
+	Eigen::MatrixXd X = refx.replicate(1,numRows);
 	X.transposeInPlace();
-	Eigen::MatrixXd Y = refy.replicate(1,XDist);
+	Eigen::MatrixXd Y = refy.replicate(1,numCols);
 
 	//Eigen can only deal with two matrices at a time, so split the computation:
 	//topographyGrid = sin(X) * sin(Y) * abs(X) * abs(Y) -pi
@@ -47,24 +45,23 @@ Grid* simulatetopographyGrid(int XDist, int YDist) {
 
 	//All this work to create a matrix of pi...
 	Eigen::MatrixXd pi;
-	pi.resize(YDist,XDist);
+	pi.resize(numRows,numCols);
 	pi.setConstant(M_PI);
-
+	temp = temp - pi;
 	//And the final result.
-	topographyGrid->data = temp - pi;
-
+	topographyGrid->data.block(border,border,numRows,numCols) = temp.block(0,0,numRows,numCols);
 	//Ignore positive values.
 	topographyGrid->data = topographyGrid->data.unaryExpr(ptr_fun(zero));
 	topographyGrid->clearNA();
-	return(topographyGrid);
 }
 
 
-Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t startY, size_t XDist, size_t YDist, string seriesName, string timestamp) {
-	Grid* topographyGrid = new Grid(XDist, YDist, "Topography");
-
-   // This will be the netCDF ID for the file and data variable.
-   int ncid, varid, retval=-100;
+void getBathy(Grid* topographyGrid, string inputFile, string inputFileType, size_t startRow, size_t startCol, size_t numRows, size_t numCols, string seriesName, string timestamp) {
+	// This will be the netCDF ID for the file and data variable.
+	Eigen::MatrixXd temp;
+	temp.resize(numRows,numCols);
+	cout<<"B1";
+	int ncid, varid, retval=-100;
 	if(strcmp(inputFileType.c_str(),"netcdf") == 0){
 
 	   // Open the file. NC_NOWRITE tells netCDF we want read-only access to the file.
@@ -78,9 +75,14 @@ Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t sta
 	   }
 	   // Read the data.
 	   try {
-		   static size_t start[] = {startY, startX};
-		   static size_t range[] = {YDist, XDist};
-		   retval = nc_get_vara_double(ncid, varid,start, range, topographyGrid->data.data());
+		   //for whatever reason, this is in column, row order.
+		   static size_t start[] = {startCol, startRow};
+		   static size_t range[] = {numCols, numRows};
+
+		   retval = nc_get_vara_double(ncid, varid,start, range, temp.data());
+		   cout<<"B1.5";
+		   topographyGrid->data.block(border,border,numRows,numCols) = temp;
+		   cout<<"B1.75";
 	   }
 	   catch (int i) {
 		   printError("ERROR: Error reading data.  Invalid file format.", retval, timestamp);
@@ -90,23 +92,20 @@ Grid* getBathy(string inputFile, string inputFileType, size_t startX, size_t sta
 		   printError("ERROR: Error closing the file.", retval, timestamp);
 	   }
 	}
-
 	else {
 		cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
-		topographyGrid = simulatetopographyGrid(XDist,YDist);
+		simulatetopographyGrid(topographyGrid, (int)numRows, (int)numCols);
 	}
-
+	cout<<"B2";
 	topographyGrid->clearNA();
-	topographyGrid->data.transposeInPlace();
+	//topographyGrid->data.transposeInPlace();
 	//topographyGrid->data = topographyGrid->data.colwise().reverse();
 	if (acousticParams["debug"] == "1") {
 		//topographyGrid->printData();
-		cout<<"startx "<< startX <<"\nXDist: "<<XDist<< "\nstartY: "<<startY<<"\nYDist: "<<YDist<<"\n";
+		cout<<"startx "<< startCol <<"\nXDist: "<<numCols<< "\nstartY: "<<startRow<<"\nYDist: "<<numRows<<"\n";
 		cout<<"inputFileType: "<< inputFileType <<"\ninputFile: "<<inputFile<< "\nseriesName: "<<seriesName<<"\n";
 		cout<<"retval: "<<retval<<"\n"<<"ncid: "<<ncid<<"\n\n";
 	}
-
-    return(topographyGrid);
 }
 
 

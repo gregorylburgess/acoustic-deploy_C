@@ -199,6 +199,7 @@ void Graph::writeMat() {
 	ofstream out;
 	int rows = grid->rows;
 	int cols = grid->cols;
+	cout <<"writing "<< rows << "," <<cols<<" r,c";
 	out.open(("data/" + grid->name + ".mat").c_str());
 	for (int i=0; i<rows; i++) {
 		for (int j=0; j<cols; j++) {

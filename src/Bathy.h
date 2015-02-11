@@ -11,9 +11,9 @@
 #include "Utility.h"
 
 
-Grid* simulatetopographyGrid(int XDist, int YDist);
-Grid* getBathy(std::string inputFile, std::string inputFileType, size_t startX, size_t startY,
-		size_t XDist, size_t YDist, std::string seriesName, std::string timestamp);
+void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols);
+void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFileType, size_t startRow, size_t startCol,
+		size_t numRows, size_t numCols, std::string seriesName, std::string timestamp);
 double zero(double x);
 
 

@@ -23,7 +23,7 @@ Grid::Grid() {
 /**
  * Creates a Grid of a given size, initialized to zero.
  */
-Grid::Grid(int Cols, int Rows, string Name) {
+Grid::Grid(int Rows, int Cols, string Name) {
 	rows = Rows;
 	cols = Cols;
 	data.resize(Rows,Cols);

@@ -58,8 +58,8 @@ double isNonPos(double x) {
 }
 
 void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
-	int rows = topographyGrid->rows;
-	int cols = topographyGrid->cols;
+	int rows = topographyGrid -> rows - 2 * border;
+	int cols = topographyGrid -> cols - 2 * border;
 	int cellSize = stoi(acousticParams["cellSize"]);
 	double ousdx = stod(acousticParams["ousdx"]),
 		   ousdy = stod(acousticParams["ousdy"]),
@@ -71,7 +71,10 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
 	//RW
 	if (fishmodel == 0){
 		cout << "\nUsing RW model\n";
-		behaviorGrid->setAll(1);
+		Eigen::MatrixXd temp;
+		temp.resize(rows,cols);
+		temp.setOnes();
+		behaviorGrid -> data.block(border,border,rows,cols) = temp;
 	}
 	//OU
 	else if (fishmodel == 1) {
@@ -99,35 +102,38 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
 		Eigen::Matrix2d hrCov;
 		hrCov << vary,covxy,covxy,varx; //2d comma initializer shortcut from Eigen
 		double temp;
-		for(double i=0; i<cols; i++) {
-			for(double j=0; j<rows; j++) {
-				temp = bivariateNorm(i/(cols-1), j/(rows-1), mux, muy, ousdx, ousdy, oucor);
-				behaviorGrid->data(i,j) = temp;
+		cout<<"Allocating";
+
+		for(double i=border; i<rows; i++) {
+			for(double j=border; j<cols; j++) {
+				temp = bivariateNorm(j/(cols-1), i/(rows-1), mux, muy, ousdx, ousdy, oucor);
+				behaviorGrid -> data(i,j) = temp;
 			}
 		}
 	}
 	//Vertical Habitat Restrictions
 	if(acousticParams.count("minDepth") > 0 && acousticParams.count("maxDepth") > 0) {
 		cout << "Using Vertical Habitat Restrictions: \nminDepth: " << acousticParams["minDepth"] << "m\nmaxDepth: " << acousticParams["maxDepth"] << "m\n";
-		Grid* minGrid = new Grid(behaviorGrid->cols, behaviorGrid->rows, "min");
-		Grid* maxGrid = new Grid(behaviorGrid->cols, behaviorGrid->rows, "max");
-		Grid* temp = new Grid(behaviorGrid->cols, behaviorGrid->rows, "temp");
+		Grid* minGrid = new Grid(rows, cols, "min");
+		Grid* maxGrid = new Grid(rows, cols, "max");
+		Grid* temp = new Grid(rows, cols, "temp");
 		//Add the minDepth to the topographyGrid (a copy, the original values are unmodified)
-		minGrid->data = topographyGrid->data.array() + stod(acousticParams["minDepth"]);
+		minGrid -> data = topographyGrid -> data.block(border,border,rows,cols).array() + stod(acousticParams["minDepth"]);
 		//Any non-positive values are valid, store a 1 there
-		minGrid->data = minGrid->data.unaryExpr(ptr_fun(isNonPos));
+		minGrid -> data = minGrid -> data.unaryExpr(ptr_fun(isNonPos));
 		//Add the maxDepth to the topographyGrid (again, a copy)
-		maxGrid->data = topographyGrid->data.array() + stod(acousticParams["maxDepth"]);
+		maxGrid -> data = topographyGrid -> data.block(border,border,rows,cols).array() + stod(acousticParams["maxDepth"]);
 		//Any non-negative values are valid, store a 1
-		maxGrid->data = maxGrid->data.unaryExpr(ptr_fun(isNonNeg));
+		maxGrid -> data = maxGrid -> data.unaryExpr(ptr_fun(isNonNeg));
 		//Multiply the two zero-one matrices to get cells with values between the min and max depths
-		temp->data = minGrid->data.cwiseProduct(maxGrid->data);
+		temp->data = minGrid -> data.cwiseProduct(maxGrid -> data);
 		//Mask the behaviorGrid with our validity matrix
-		behaviorGrid->data = behaviorGrid->data.cwiseProduct(temp->data);
+		cout<<"F2";
+		behaviorGrid -> data.block(border,border,rows,cols) = behaviorGrid -> data.block(border,border,rows,cols).cwiseProduct(temp->data);
 	}
 	//convert the grid to a probability matrix
-	double sum = behaviorGrid->data.sum();
-    behaviorGrid->data = behaviorGrid->data / sum;
+	double sum = behaviorGrid -> data.sum();
+    behaviorGrid -> data = behaviorGrid -> data / sum;
 }
 
 

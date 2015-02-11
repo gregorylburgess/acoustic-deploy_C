@@ -43,7 +43,7 @@ bool runGoodnessTests() {
 
 
 /**
- * Calls calcPercentViz() to test LoS correctness.
+ * Calls calcPercentViz() with a square matrix to test LoS correctness.
  */
 bool checkCalcPercentViz () {
 	Grid* challenge = new Grid(5, 5, "Challenge");
@@ -58,16 +58,18 @@ bool checkCalcPercentViz () {
 							 -3.5,        -7,         0,         7,         7,
 						-0.447214,  -4.94975,        -7,  -4.94975,         7,
 						-0.353553, -0.447214,        -7,  -3.57771,  -2.82843;
-	Grid* result = new Grid(5,5, "Result");
-	result->data << calcPercentViz(challenge,2,2,2);
-	Eigen::MatrixXd delta = solution->data - result->data;
+	Eigen::MatrixXd distGradient;
+	makeDistGradient(&distGradient,2);
+	Eigen::MatrixXd result;
+	calcVizGrid(challenge, &distGradient, &result, 2,2,2);
+	Eigen::MatrixXd delta = solution->data - result;
 	delta = delta.cwiseAbs();
 	int i=0,j=0;
 	for(i=0;i<challenge->data.rows();i++){
 		for(j=0;j<challenge->data.cols();j++) {
 			if(delta(i,j) > tolerance) {
 				cout << "ERROR!\nExpected value: " << solution->data(i,j)
-					 <<"\n Recieved value: "<< result->data(i,j) << " @ "<< i<< ", " << j;
+					 <<"\n Recieved value: "<< result(i,j) << " @ "<< i<< ", " << j;
 				return false;
 			}
 		}

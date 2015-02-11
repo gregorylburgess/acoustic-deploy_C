@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#define EIGEN_DEFAULT_TO_ROW_MAJOR
 #include <Dense> //Eigen/Dense
 using namespace std;
 
@@ -13,7 +14,7 @@ class Grid {
 		string name;
 
 		Grid();
-		Grid(int Cols, int Rows, string name);
+		Grid(int Rows, int Cols, string name);
 		Grid(Grid* mat, string name);
 		Grid(Eigen::MatrixXd dat, string newName);
 		void clearNA();
