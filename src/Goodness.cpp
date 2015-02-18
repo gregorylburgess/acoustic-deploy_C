@@ -49,13 +49,13 @@ void goodFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, doub
 	int rows = topographyGrid->rows;
 	int rstart=0, cstart=0, rdist=0,cdist=0,rend=0,cend=0;
 
-	for (int r = 0; r<rows; r++) {
-		rstart = max(r-range, 0);
-		rend = min(rows-1,r+range);
+	for (int r = border; r<rows-border; r++) {
+		rstart = r-range;
+		rend = r+range;
 		rdist = rend-rstart + 1;
-		for (int c = 0; c<cols; c++) {
-			cstart = max(c-range,0);
-			cend = min(cols-1, c+range);
+		for (int c = border; c<cols-border; c++) {
+			cstart = c-range;
+			cend = c+range;
 			cdist = cend-cstart + 1;
 			cout<<"\nr:"<<r<<"\nc"<<c<<"\nrstart:"<<rstart<<"\nrend:"<<rend<<"\nrdist:"<<rdist<<"\ncstart:"<<cstart<<"\ncend:"<<cend<<"\ncdist:"<<cdist<<"\n\n\n";
 			goodnessGrid->data(r,c)= behaviorGrid->data.block(rstart, cstart, rdist, cdist).sum();
@@ -74,8 +74,9 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, doubl
 	distGradient.resize(size,size);
 	distGradient.setConstant(0);
 	makeDistGradient(&distGradient,range);
-	for (int r = 0; r<rows; r++) {
-		for (int c = 0; c<cols; c++) {
+	for (int r = border; r<rows-border; r++) {
+		//out<<"\n"<<r;
+		for (int c = border; c<cols-border; c++) {
 			calcVizGrid(topographyGrid, &distGradient, &vizGrid, r, c, range);
 			goodnessGrid->data(r,c) = vizGrid.sum();
 		}
@@ -87,12 +88,11 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
 	int range = (int) rng,
 	cols = topographyGrid->cols,
 	rows = topographyGrid->rows,
-	size = 2 * rng + 1,
-	rstart=0, cstart=0, rdist=0,cdist=0,rend=0,cend=0;
+	size = 2 * range + 1;
 	Eigen::MatrixXd distGradient;
 	distGradient.resize(size,size);
 	distGradient.setConstant(0);
-	makeDistGradient(&distGradient,rng);
+	makeDistGradient(&distGradient,range);
 	for (int r = 0; r<rows; r++) {
 		for (int c = 0; c<cols; c++) {
 			//*goodnessGrid(r,c) = calcPercentViz(topographyGrid, r, c, rng);//TODO: Add fish calculation
@@ -195,9 +195,7 @@ vector<pair<int,int>> getCells(const pair <int,int> *origin, const pair <int,int
 
 
 void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
-	int size = 2 * rng + 1,
-		i=0,
-		j=0;
+	int size = 2 * rng + 1;
 	Eigen::MatrixXd X;
 	Eigen::MatrixXd Y;
 	//Vectors from -rng to rng, of length size
@@ -220,78 +218,58 @@ void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
  * Calculates the visibility Grid for a cell at r,c on the topographyGrid.  Should be a grid containing the max visible depth.
  */
 void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient, Eigen::MatrixXd* solutionGrid, int r, int c, int rng) {
-	cout<<"[CalcPercentViz()]\n";
-	int i=0,j=0,
-	globalRowCount = topographyGrid->rows,
-	globalColCount = topographyGrid->cols,
+		//cout<<"\n[CalcVizGrid()]\n";
+	int i = 0,j = 0,
 	//Compute row metadata
-	globalStartingRow = max(r-rng, 0),
-	globalEndingRow = min(globalRowCount-1,r+rng),
-	rowDistance = globalEndingRow-globalStartingRow+1,
-	localRow = r-globalStartingRow,
+	startRow = r - rng,
 	//Compute col metadata
-	globalStartingCol = max(c-rng,0),
-	globalEndingCol = min(globalColCount-1, c+rng),
-	colDistance = globalEndingCol-globalStartingCol+1,
-	localCol = c-globalStartingCol;
-	if(acousticParams["debug"]=="1") {
-		cout<<"\nr:"<<r<<"\nc"<<c<<"\nrstart:"<<globalStartingRow<<"\nrend:"<<globalEndingRow<<"\nrdist:"<<rowDistance<<"\ncstart:"<<globalStartingCol<<"\ncend:"<<globalEndingCol<<"\ncdist:"<<colDistance<<"\n\n\n";
-	}
-
+	startCol = c - rng,
+	sensorDiameter = 2 * rng + 1;
 	Eigen::MatrixXd slopeGrid;
 	Eigen::MatrixXd vizGrid;
 	Eigen::MatrixXd localTopo;
 	//assign dimensions, and set all values in vizGrid to the center cell's depth
 	//copy out the block of topography we're interested in.
-	localTopo = topographyGrid->data.block(globalStartingRow,globalStartingCol, rowDistance, colDistance);
-	vizGrid.resize(rowDistance,colDistance);
-	solutionGrid->resize(rowDistance,colDistance);
-	vizGrid.setConstant(topographyGrid->data(localRow,localCol)); //Todo figure out how to calculate origin.
+	localTopo = topographyGrid->data.block(startRow, startCol, sensorDiameter, sensorDiameter);
+	vizGrid.resize(sensorDiameter, sensorDiameter);
+	solutionGrid->resize(sensorDiameter, sensorDiameter);
+	vizGrid.setConstant(topographyGrid->data(rng, rng));
 	//vizGrid now contains the depth deltas from the origin cell
 	vizGrid = localTopo - vizGrid;
 	//slopeGrid now contains depth deltas divided by distance deltas, aka the slope from the center cell to each cell.
-	cout<<"B2.5";
 	slopeGrid = vizGrid.cwiseQuotient(*distGradient);
-	/** slopeGrid now has the slope from all cells to the center
-	 *  viz grid has depth deltas
-	 */
+	//slopeGrid now has the slope from all cells to the center
+	//viz grid has depth deltas
 	set <pair<int,int>> unprocessedCells;
 	vector<pair<int,int>> interveningCells;
-	pair<int,int> origin = make_pair(rng,rng);
-	double maxSlope=0;
-	cout<<"B2.75";
-	for(i=0;i<rowDistance;i++) {
-		for (j=0;j<colDistance;j++)
+	pair<int,int> origin = make_pair(rng, rng);
+	double maxSlope = 0;
+	//Add cells to process to a list.
+	for(i=0;i<sensorDiameter;i++) {
+		for (j=0;j<sensorDiameter;j++)
 			unprocessedCells.insert((const pair<int,int>) make_pair(i,j)); //(r,c) pairs
 
 	}
-	cout<<"B3";
-	//cout<<"Added cells to process\n";
 	unprocessedCells.erase(origin);
 	maxSlope=0;
 	while (unprocessedCells.size() > 0) {
-		//cout<<"Getting cells\n";
 		//cout<<unprocessedCells.cbegin()->first <<","<<unprocessedCells.cbegin()->second;
 		interveningCells = getCells(&origin, &*unprocessedCells.cbegin());
-		//cout<<"\nGot cells\n";
 		if(interveningCells.size() > 0) {
 			auto iterator = interveningCells.cbegin();
 			pair<int,int> it = *iterator;
-			//cout<<"Getting slope\n";
 			i=it.first;
 			j=it.second;
-			//cout<<"Getting "<<i<<","<<j<<"\n";
 			maxSlope = slopeGrid(i,j);
-			//cout<<"Processing cells\n";
+			//Process each cell for LoS
 			for (auto iterator = interveningCells.begin(); iterator != interveningCells.cend(); ++iterator) {
-				//cout << iterator->first << "," << iterator->second << "\n";
 				maxSlope = max(maxSlope, slopeGrid(iterator->first,iterator->second));
 				(*solutionGrid)(iterator->first,iterator->second) = maxSlope;
 				unprocessedCells.erase(*iterator);
 			}
-			//cout<<"Erasing extra cell \n";
 			unprocessedCells.erase(*interveningCells.crend());
 		}
 	}
+		//cout<<"End [calcVizGrid()]";
 }
 

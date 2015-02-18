@@ -32,13 +32,6 @@ bool runGoodnessTests() {
 		cout<<"Failures occured!";
 	}
 	return success;
-	/*const pair<int,int> origin = make_pair(3,4), target = make_pair(0,1);
-	auto vec = getCells(&origin, &target);
-	cout<<"\nSize:"<<vec->size()<<"\n";
-	for (auto iterator = vec->begin(); iterator != vec->cend(); ++iterator) {
-		cout<<iterator->first<<","<<iterator->second<<"\n";
-	}
-	return true;*/
 }
 
 

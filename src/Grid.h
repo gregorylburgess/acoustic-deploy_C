@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#define EIGEN_DEFAULT_TO_ROW_MAJOR
 #include <Dense> //Eigen/Dense
 using namespace std;
 

@@ -128,7 +128,6 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
 		//Multiply the two zero-one matrices to get cells with values between the min and max depths
 		temp->data = minGrid -> data.cwiseProduct(maxGrid -> data);
 		//Mask the behaviorGrid with our validity matrix
-		cout<<"F2";
 		behaviorGrid -> data.block(border,border,rows,cols) = behaviorGrid -> data.block(border,border,rows,cols).cwiseProduct(temp->data);
 	}
 	//convert the grid to a probability matrix

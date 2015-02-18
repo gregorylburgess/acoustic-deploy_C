@@ -196,18 +196,13 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
  * Writes the data value to a text file as a matrix (.mat).
  */
 void Graph::writeMat() {
-	ofstream out;
 	int rows = grid->rows;
 	int cols = grid->cols;
-	cout <<"writing "<< rows << "," <<cols<<" r,c";
-	out.open(("data/" + grid->name + ".mat").c_str());
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			out << setprecision(3)<<grid->data(i,j) << " ";
-		}
-		out << "\r\n";
-	}
+	ofstream out;
+	std::cout << std::fixed;
 
+	out.open(("data/" + grid->name + ".mat").c_str());
+	out << grid->data;
 	out.close();
 }
 
@@ -216,12 +211,21 @@ void Graph::writeMat() {
  */
 void Graph::writeDat() {
 	ofstream out;
+	int i=0;
+	int j=0;
 	int rows = grid->rows;
 	int cols = grid->cols;
+	double val =9;
+	Eigen::MatrixXd temp;
+	temp.resize(rows,cols);
+	temp = grid->data;
 	out.open(("data/" + grid->name + ".dat").c_str());
-	for (int i=0; i<rows; i++) {
-		for (int j=0; j<cols; j++) {
-			out << setprecision(3) << j << " " << i << " " << grid->data(i,j) << "\r\n";
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
+
+			val = temp(i,j);
+			//Yes this is backwards.  No it's not an error.  THANKS GPUPlot...
+			out << setprecision(3) << j << " " << i << " " << val << "\r\n";
 		}
 		out << "\r\n";
 	}

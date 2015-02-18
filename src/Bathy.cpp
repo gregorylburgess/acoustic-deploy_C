@@ -41,7 +41,9 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
 	//topographyGrid = sin(X) * sin(Y) * abs(X) * abs(Y) -pi
 	Eigen::MatrixXd absXY = X.cwiseAbs().cwiseProduct(Y.cwiseAbs());
 	Eigen::MatrixXd sins = X.array().sin().cwiseProduct(Y.array().sin());
-	Eigen::MatrixXd temp = absXY.cwiseProduct(sins);
+	Eigen::MatrixXd temp;
+	temp.resize(numRows,numCols);
+	temp = absXY.cwiseProduct(sins);
 
 	//All this work to create a matrix of pi...
 	Eigen::MatrixXd pi;
@@ -59,8 +61,8 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
 void getBathy(Grid* topographyGrid, string inputFile, string inputFileType, size_t startRow, size_t startCol, size_t numRows, size_t numCols, string seriesName, string timestamp) {
 	// This will be the netCDF ID for the file and data variable.
 	Eigen::MatrixXd temp;
-	temp.resize(numRows,numCols);
-	cout<<"B1";
+	//Data will be read in column major, so set up a matrix of inverse size to recieve it.
+	temp.resize(numCols,numRows);
 	int ncid, varid, retval=-100;
 	if(strcmp(inputFileType.c_str(),"netcdf") == 0){
 
@@ -76,13 +78,11 @@ void getBathy(Grid* topographyGrid, string inputFile, string inputFileType, size
 	   // Read the data.
 	   try {
 		   //for whatever reason, this is in column, row order.
-		   static size_t start[] = {startCol, startRow};
-		   static size_t range[] = {numCols, numRows};
-
+		   static size_t start[] = {startRow, startCol};
+		   static size_t range[] = {numRows, numCols};
 		   retval = nc_get_vara_double(ncid, varid,start, range, temp.data());
-		   cout<<"B1.5";
-		   topographyGrid->data.block(border,border,numRows,numCols) = temp;
-		   cout<<"B1.75";
+		   //TODO: Figure out a way to read data in row wise to avoid this transposition.
+		   topographyGrid->data.block(border,border,numRows,numCols) = temp.transpose().block(0,0,numRows,numCols);
 	   }
 	   catch (int i) {
 		   printError("ERROR: Error reading data.  Invalid file format.", retval, timestamp);
@@ -96,10 +96,7 @@ void getBathy(Grid* topographyGrid, string inputFile, string inputFileType, size
 		cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
 		simulatetopographyGrid(topographyGrid, (int)numRows, (int)numCols);
 	}
-	cout<<"B2";
 	topographyGrid->clearNA();
-	//topographyGrid->data.transposeInPlace();
-	//topographyGrid->data = topographyGrid->data.colwise().reverse();
 	if (acousticParams["debug"] == "1") {
 		//topographyGrid->printData();
 		cout<<"startx "<< startCol <<"\nXDist: "<<numCols<< "\nstartY: "<<startRow<<"\nYDist: "<<numRows<<"\n";

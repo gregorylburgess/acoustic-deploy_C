@@ -10,7 +10,6 @@
 #include <Dense>
 #include <Core>
 #include "Grid.h"
-using namespace Eigen;
 using namespace std;
 
 Grid::Grid() {
@@ -88,6 +87,7 @@ void Grid::printData() {
 		cout << "\n";
 	}
 }
+
 
 void Grid::replace(double find, double replace) {
 	for (int i=0; i<rows; i++) {
