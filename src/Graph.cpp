@@ -76,7 +76,7 @@ void Graph::printContour(double *contourLevels) {
  * Prints a graph of a given file with contour data.
  * Requires that a contour file for the existing file exists.
  */
-void  Graph::printContourGraph(int width, int height, double *contourLevels) {
+void  Graph::printContourGraph(int width, int height, double *contourLevels, bool logScaleGraphColoring) {
 	cout << "\n\nPrinting " << grid->name << " graph...\n";
 	int i = 0, numOfLevels = stoi(acousticParams["numContourDepths"]);
 	double  xstart = -.5,
@@ -120,12 +120,12 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 	//ss << setCBRange;
 
 	//Set x/y range values
-	ss << "set yrange [" << ystart << ":" << grid->rows - 0.5 << "];";
+	ss << "set yrange [" << ystart << ":" << grid->rows - 2*border - 0.5 << "];";
 	yrange = ss.str();
 	ss.str("");
 	ss.clear();
 
-	ss << "set xrange [" << xstart << ":" << grid->cols - 0.5 << "];";
+	ss << "set xrange [" << xstart << ":" << grid->cols - 2*border - 0.5 << "];";
 	xrange = ss.str();
 	ss.str("");
 	ss.clear();
@@ -172,6 +172,9 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
 		plots.cmd("set style line 1 lt 1 lw 1;");
 		plots.cmd(setLegendColor);
 		plots.cmd(setLegendFont);
+		if(logScaleGraphColoring) {
+			plots.cmd("set log cb;");
+		}
 		plots.cmd(xrange);
 		plots.cmd(yrange);
 		//plots.cmd(size);
@@ -196,13 +199,12 @@ void  Graph::printContourGraph(int width, int height, double *contourLevels) {
  * Writes the data value to a text file as a matrix (.mat).
  */
 void Graph::writeMat() {
-	int rows = grid->rows;
-	int cols = grid->cols;
 	ofstream out;
-	std::cout << std::fixed;
-
+	int rows = grid->rows-2*border,
+		cols = grid->cols-2*border;
+	cout <<"writing "<< rows << "," <<cols<<" r,c";
 	out.open(("data/" + grid->name + ".mat").c_str());
-	out << grid->data;
+	out << grid->data.block(border,border,rows,cols);
 	out.close();
 }
 
@@ -213,19 +215,18 @@ void Graph::writeDat() {
 	ofstream out;
 	int i=0;
 	int j=0;
-	int rows = grid->rows;
-	int cols = grid->cols;
+	int rows = grid->rows-2*border;
+	int cols = grid->cols-2*border;
 	double val =9;
 	Eigen::MatrixXd temp;
 	temp.resize(rows,cols);
 	temp = grid->data;
 	out.open(("data/" + grid->name + ".dat").c_str());
-	for (i=0; i<rows; i++) {
-		for (j=0; j<cols; j++) {
-
+	for (i=border; i<rows; i++) {
+		for (j=border; j<cols; j++) {
 			val = temp(i,j);
 			//Yes this is backwards.  No it's not an error.  THANKS GPUPlot...
-			out << setprecision(3) << j << " " << i << " " << val << "\r\n";
+			out << setprecision(3) << j-border << " " << i-border << " " << val << "\r\n";
 		}
 		out << "\r\n";
 	}

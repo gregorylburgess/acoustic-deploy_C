@@ -44,12 +44,13 @@ int main() {
 		acousticParams.insert({"inputFileType","netcdf"});
 		acousticParams.insert({"seriesName","z"});
 		acousticParams.insert({"timestamp","-1"});
+		acousticParams.insert({"logScaleGraphColoring", "1"});
 
 		//TODO: Data validation
-		int startCol = 0,
-			startRow = 0,
-			ColDist = 900,
-			RowDist = 800,
+		int startCol = 450,
+			startRow = 340,
+			ColDist = 250,
+			RowDist = 170,
 			width = 1000,
 			height = 1000,
 			i=0,
@@ -91,6 +92,7 @@ int main() {
 		Grid bGrid(RowDist + 2 * border, ColDist + 2 * border, "Behavior");
 		Grid gGrid(RowDist + 2 * border, ColDist + 2 * border, "Goodness");
 		Grid tGrid(RowDist + 2 * border, ColDist + 2 * border, "Topography");
+		tGrid.data.setConstant(0);
 		//Fetch or simulate topography
 		if(simulateBathy) {
 			simulatetopographyGrid(&tGrid, RowDist, ColDist);
@@ -99,8 +101,6 @@ int main() {
 			getBathy(&tGrid, acousticParams["inputFile"], acousticParams["inputFileType"],  size_t(startRow),
 					 size_t(startCol), size_t(RowDist),  size_t(ColDist), acousticParams["seriesName"], acousticParams["timestamp"]);
 		}
-		//tGrid.data.reverseInPlace();
-		//tGrid.data.transposeInPlace();
 		//Fill in Behavior Grid
 		populateBehaviorGrid(&tGrid, &bGrid);
 			vizBegin = clock();
@@ -124,19 +124,19 @@ int main() {
 			//Print the contour file used by all graphs.  (Do this just once as it takes a loooong time).
 			tGraph.printContour(contourPtr);
 			//Graph the Topography Grid with contour lines.
-			tGraph.printContourGraph(width, height, contourPtr);
+			tGraph.printContourGraph(width, height, contourPtr, false);
 
 			//Print the matrix & data files for Bathymetry Grid
 			bGraph.writeMat();
 			bGraph.writeDat();
 			//Graph Behavior Grid with contour lines.
-			bGraph.printContourGraph(width, height, contourPtr);
+			bGraph.printContourGraph(width, height, contourPtr, false);
 
 			//Print the matrix & data files for Goodness Grid
 			gGraph.writeMat();
 			gGraph.writeDat();
 			//Graph Goodness Grid with contour lines.
-			gGraph.printContourGraph(width, height, contourPtr);
+			gGraph.printContourGraph(width, height, contourPtr, false);
 
 		}
 		catch(int e) {

@@ -54,7 +54,9 @@ bool checkCalcPercentViz () {
 	Eigen::MatrixXd distGradient;
 	makeDistGradient(&distGradient,2);
 	Eigen::MatrixXd result;
-	calcVizGrid(challenge, &distGradient, &result, 2,2,2);
+	Eigen::MatrixXd localTopo;
+	Eigen::MatrixXd temp;
+	calcVizGrid(challenge, &distGradient, &result, &localTopo, &temp, 2,2,2);
 	Eigen::MatrixXd delta = solution->data - result;
 	delta = delta.cwiseAbs();
 	int i=0,j=0;

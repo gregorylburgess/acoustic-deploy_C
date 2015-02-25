@@ -16,7 +16,7 @@ class Graph {
 		Grid* grid;
 		Graph(Grid* g);
 		void printContour(double *contourLevels);
-		void  printContourGraph(int width, int height, double *contourLevels);
+		void  printContourGraph(int width, int height, double *contourLevels, bool logScaleGraphColoring);
 		void writeDat();
 		void writeMat();
 };

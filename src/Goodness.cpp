@@ -25,6 +25,20 @@ class sortByDist {
 		}
 };
 
+double validate(double x) {
+	if (std::isnan(x) || std::isinf(x)) {
+		return 0;
+	}
+	return x;
+}
+
+double restrictMaxVizDepth(double x) {
+	if (x>0) {
+		return 0;
+	}
+	return x;
+}
+
 void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, int bias, int range) {
 	if (bias == 1) {
 		goodFish(topographyGrid, behaviorGrid, goodnessGrid, range);
@@ -67,20 +81,35 @@ void goodFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, doub
 void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, double rng) {
 	Eigen::MatrixXd distGradient;
 	Eigen::MatrixXd vizGrid;
+	Eigen::MatrixXd localTopography;
+	Eigen::MatrixXd temp;
+	double sum =0;
 	int range = (int) rng,
 		cols = topographyGrid->cols,
 		rows = topographyGrid->rows,
-		size = 2 * range + 1;
+		size = 2 * range + 1,
+		lowerBorderRange = 2*border,
+		upperRowRng = rows-2*border-1,
+		upperColRng = cols-2*border-1;
 	distGradient.resize(size,size);
 	distGradient.setConstant(0);
 	makeDistGradient(&distGradient,range);
 	for (int r = border; r<rows-border; r++) {
 		//out<<"\n"<<r;
 		for (int c = border; c<cols-border; c++) {
-			calcVizGrid(topographyGrid, &distGradient, &vizGrid, r, c, range);
-			goodnessGrid->data(r,c) = vizGrid.sum();
+			calcVizGrid(topographyGrid, &distGradient, &vizGrid, &localTopography, &temp, r, c, range);
+			vizGrid = vizGrid.unaryExpr(ptr_fun(restrictMaxVizDepth));
+			temp = vizGrid.cwiseQuotient(localTopography);
+			//if we're near the border, there will be null values (because we divided visible depth
+			//by the depth of a border cell (which is 0)).
+			if(c<lowerBorderRange  ||  r<lowerBorderRange  ||  r > upperRowRng || c > upperColRng) {
+				temp = temp.unaryExpr(ptr_fun(validate));
+			}
+			goodnessGrid->data(r,c) = temp.sum();
 		}
 	}
+
+	goodnessGrid->data=goodnessGrid->data/(size*size);
 }
 
 
@@ -96,6 +125,10 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
 	for (int r = 0; r<rows; r++) {
 		for (int c = 0; c<cols; c++) {
 			//*goodnessGrid(r,c) = calcPercentViz(topographyGrid, r, c, rng);//TODO: Add fish calculation
+			//calculate max visible depth for each cell in sensor range or r,c
+				//solution(r,c) = sum(maxVisible depth/actual topographic depth)
+			//else
+				//solution (r,c) = sum(
 		}
 	}
 	}
@@ -215,9 +248,9 @@ void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
 
 
 /**
- * Calculates the visibility Grid for a cell at r,c on the topographyGrid.  Should be a grid containing the max visible depth.
+ * Calculates the visibility Grid for a cell at r,c on the topographyGrid.  This is a grid containing the max visible depth.
  */
-void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient, Eigen::MatrixXd* solutionGrid, int r, int c, int rng) {
+void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient, Eigen::MatrixXd* solutionGrid, Eigen::MatrixXd* localTopo, Eigen::MatrixXd* tempGrid, int r, int c, int rng) {
 		//cout<<"\n[CalcVizGrid()]\n";
 	int i = 0,j = 0,
 	//Compute row metadata
@@ -226,18 +259,16 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient, Eigen::Mat
 	startCol = c - rng,
 	sensorDiameter = 2 * rng + 1;
 	Eigen::MatrixXd slopeGrid;
-	Eigen::MatrixXd vizGrid;
-	Eigen::MatrixXd localTopo;
 	//assign dimensions, and set all values in vizGrid to the center cell's depth
 	//copy out the block of topography we're interested in.
-	localTopo = topographyGrid->data.block(startRow, startCol, sensorDiameter, sensorDiameter);
-	vizGrid.resize(sensorDiameter, sensorDiameter);
+	(*localTopo) = topographyGrid->data.block(startRow, startCol, sensorDiameter, sensorDiameter);
+	tempGrid->resize(sensorDiameter, sensorDiameter);
+	tempGrid->setConstant((*localTopo)(rng, rng));
 	solutionGrid->resize(sensorDiameter, sensorDiameter);
-	vizGrid.setConstant(topographyGrid->data(rng, rng));
 	//vizGrid now contains the depth deltas from the origin cell
-	vizGrid = localTopo - vizGrid;
+	*tempGrid = (*localTopo) - (*tempGrid);
 	//slopeGrid now contains depth deltas divided by distance deltas, aka the slope from the center cell to each cell.
-	slopeGrid = vizGrid.cwiseQuotient(*distGradient);
+	slopeGrid = tempGrid->cwiseQuotient(*distGradient);
 	//slopeGrid now has the slope from all cells to the center
 	//viz grid has depth deltas
 	set <pair<int,int>> unprocessedCells;
@@ -264,12 +295,18 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient, Eigen::Mat
 			//Process each cell for LoS
 			for (auto iterator = interveningCells.begin(); iterator != interveningCells.cend(); ++iterator) {
 				maxSlope = max(maxSlope, slopeGrid(iterator->first,iterator->second));
-				(*solutionGrid)(iterator->first,iterator->second) = maxSlope;
+				(*tempGrid)(iterator->first,iterator->second) = maxSlope;
 				unprocessedCells.erase(*iterator);
 			}
 			unprocessedCells.erase(*interveningCells.crend());
 		}
 	}
+	//at this point, tempGrid has all the max slopes (LoS)
+	//				 slopeGrid is free to use
+	//				 localTopo still has topography
+	*solutionGrid = tempGrid->cwiseProduct(*distGradient).array() + (*localTopo)(rng,rng);
+	//solutionGrid now has the max visible depths from the origin cell.
+
 		//cout<<"End [calcVizGrid()]";
 }
 

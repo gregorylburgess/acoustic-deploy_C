@@ -24,7 +24,7 @@ using namespace std;
 
 double zero(double x) {
 	if (x > 0) {
-		return 0;
+		return 1;
 	}
 	return x;
 }
@@ -97,6 +97,7 @@ void getBathy(Grid* topographyGrid, string inputFile, string inputFileType, size
 		simulatetopographyGrid(topographyGrid, (int)numRows, (int)numCols);
 	}
 	topographyGrid->clearNA();
+	topographyGrid->data = topographyGrid->data.unaryExpr(ptr_fun(zero));
 	if (acousticParams["debug"] == "1") {
 		//topographyGrid->printData();
 		cout<<"startx "<< startCol <<"\nXDist: "<<numCols<< "\nstartY: "<<startRow<<"\nYDist: "<<numRows<<"\n";
