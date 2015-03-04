@@ -13,6 +13,8 @@
 void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols);
 void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFileType, size_t startRow, size_t startCol,
 		size_t numRows, size_t numCols, std::string seriesName, std::string timestamp);
+std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
+std::vector<std::string> split(const std::string &s, char delim);
 double zero(double x);
 
 
