@@ -56,7 +56,7 @@ bool checkCalcPercentViz () {
 	Eigen::MatrixXd result;
 	Eigen::MatrixXd localTopo;
 	Eigen::MatrixXd temp;
-	calcVizGrid(challenge, &distGradient, &result, &localTopo, &temp, 2,2,2);
+	calcVizGrid(challenge, &distGradient, &result, &localTopo, &temp, 2, 2, 2);
 	Eigen::MatrixXd delta = solution->data - result;
 	delta = delta.cwiseAbs();
 	int i=0,j=0;
@@ -64,7 +64,7 @@ bool checkCalcPercentViz () {
 		for(j=0;j<challenge->data.cols();j++) {
 			if(delta(i,j) > tolerance) {
 				cout << "ERROR!\nExpected value: " << solution->data(i,j)
-					 <<"\n Recieved value: "<< result(i,j) << " @ "<< i<< ", " << j;
+					 <<"\nRecieved value: "<< result(i,j) << " @ "<< i<< ", " << j <<"\n";
 				return false;
 			}
 		}
