@@ -24,6 +24,7 @@ namespace std {
  *           size of the home range on the y axis
  * @param cor The correlation between sdx and sdy.  Controls the tilt of the
  *           homerange.  Valid values are between 1 and -1
+ * @return The value of the bivariate normal distribution at cell (x,y).
  */
 double bivariateNorm(double x, double y, double mux, double muy, double sdx,
                      double sdy, double cor) {
@@ -44,8 +45,9 @@ double bivariateNorm(double x, double y, double mux, double muy, double sdx,
 
 
 /**
- * Checks if x is non-negative, returning 1 if it is, and zero otherise.
+ * Checks if x is non-negative, returning 1 if it is, and zero otherwise.
  * @param x The value to check.
+ * @return 1 if x is non-negative, 0 otherwise.
  */
 double isNonNeg(double x) {
     if (x >= 0) {
@@ -57,6 +59,7 @@ double isNonNeg(double x) {
 /**
  * Checks if x is non-positive, returning 1 if it is, and zero otherwise.
  * @param x The value to check.
+ * @return 1 if x is non-positive, 0 otherwise.
  */
 double isNonPos(double x) {
     if (x <= 0) {
@@ -65,6 +68,14 @@ double isNonPos(double x) {
     return 0;
 }
 
+/**
+ * Populates a behaviorGrid with the probability of some tag releasing a ping
+ * from each cell over the course of entire the observation period.
+ * @param topographyGrid A pointer to a Grid object containing topographic
+ *      information for the area of study.
+ * @param behaviorGrid A pointer to a zero-initalized Grid object of the same
+ *      size as the topographyGrid.
+ */
 void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
     int rows = topographyGrid -> rows - 2 * border;
     int cols = topographyGrid -> cols - 2 * border;

@@ -16,6 +16,11 @@
 #define _USE_MATH_DEFINES
 
 namespace std {
+/**
+ * Checks if x is positive, returning 1 if it is, and x otherwise.
+ * @param x The value to inspect.
+ * @return 1 if x is positive, x otherwise.
+ */
 double zero(double x) {
     if (x > 0) {
         return 1;
@@ -23,8 +28,15 @@ double zero(double x) {
     return x;
 }
 
+/**
+ * A helper function that populates a vector of strings by splitting a string
+ * on a delimiter.
+ * @param s A pointer to the string to split.
+ * @param delim A delimiting character.
+ * @param elems A pointer to an empty vector of strings.
+ */
 void splitVec(string *s, char delim,
-                            vector<string> *elems) {
+              vector<string> *elems) {
     stringstream ss(*s);
     string item;
     while (getline(ss, item, delim)) {
@@ -32,13 +44,26 @@ void splitVec(string *s, char delim,
     }
 }
 
-
+/**
+ * Splits a string based on a delimiting character.
+ * @param s A pointer to the string to split.
+ * @param delim A delimiting character.
+ * @return a vector of strings containing the substrings between delimiters.
+ */
 vector<string> split(string *s, char delim) {
     vector<string> elems;
     splitVec(s, delim, &elems);
     return elems;
 }
 
+/**
+ * Generates an artificial topographyGrid of size numRows x numCols if no
+ * topographic data is available.  Results are dumped into topographyGrid.
+ * @param topographyGrid A pointer to a zero-initialized Grid of size
+ * numRows x numCols.
+ * @param numRows The desired number of rows in the resuliting matrix.
+ * @param numCols The desired number of cols in the resulting matrix.
+ */
 void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
     Eigen::VectorXd refx = refx.LinSpaced(numCols, -2*M_PI, 2*M_PI);
     Eigen::VectorXd refy = refx.LinSpaced(numRows, -2*M_PI, 2*M_PI);
@@ -68,7 +93,22 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
     topographyGrid->clearNA();
 }
 
-
+/**
+ * Generates a bathymetryGrid by reading data from a local file.  Results are
+ * dumped into topographyGrid.
+ * @param topographyGrid A pointer to a zero-initialized Grid of size
+ *      numRows x numCols.
+ * @param inputFile The relative path to the topography file you wish to use.
+ * @param inputFileType Use 'netcdf' if your file is in netcdf format.  Use
+ *      'asc' if the file is a matrix of ascii values in the GIS asc format.
+ * @param startRow The row to start reading data from.
+ * @param startCol The col to start reading data from.
+ * @param numRows The desired number of rows of data to read.
+ * @param numCols The desired number of cols of data to read.
+ * @param seriesName If inputFileType was set to 'netcdf', this should be set
+ *      to the name of the series you wish to use.
+ * @param timestamp A timestamp value used for error reporting.
+ */
 void getBathy(Grid* topographyGrid, string inputFile, string inputFileType,
               size_t startRow, size_t startCol, size_t numRows, size_t numCols,
               string seriesName, string timestamp) {

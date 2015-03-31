@@ -610,18 +610,30 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
 
 /**
  * Calculates the visibility Grid for a cell at r, c on the topographyGrid.
- * This is a grid containing the max visible depth.
+ * The result  is a grid containing the max visible depth at each cell from
+ * the center cell.  Results are dumped into solutionGrid.
+ *  @param topographyGrid A pointer to a Grid object containing topographic
+ *      information for the area of study.
+ * @param distanceGradient A pointer to a matrix containing the distance of
+ *      each cell from the center.
+ * @param solutionGrid A pointer to an empty matrix.
+ * @param localTopo A pointer to an empty matrix.
+ * @param tempGrid A pointer to an empty matrix.
+ * @param row The row index for the origin cell in the topographyGrid.
+ * @param col The col index for the origin cell in the topographyGrid.
+ * @param sensorRange The maximum detection range of a sensor given in units
+ *      of grid cells.
  */
-void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
+void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
         Eigen::MatrixXd* solutionGrid, Eigen::MatrixXd* localTopo,
-        Eigen::MatrixXd* tempGrid, int r, int c, int rng) {
+        Eigen::MatrixXd* tempGrid, int row, int col, int sensorRange) {
     // cout  <<  "\n[CalcVizGrid()]\n";
     int i = 0, j = 0,
         // Compute row metadata
-        startRow = r - rng,
+        startRow = row - sensorRange,
         // Compute col metadata
-        startCol = c - rng,
-        sensorDiameter = 2 * rng + 1;
+        startCol = col - sensorRange,
+        sensorDiameter = 2 * sensorRange + 1;
     Eigen::MatrixXd slopeGrid;
     // assign dimensions, and set all values in vizGrid to the center
     //    cell's depth
@@ -629,17 +641,17 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
     (*localTopo) = topographyGrid->data.block(startRow, startCol,
                      sensorDiameter, sensorDiameter);
     tempGrid->resize(sensorDiameter, sensorDiameter);
-    tempGrid->setConstant((*localTopo)(rng, rng));
+    tempGrid->setConstant((*localTopo)(sensorRange, sensorRange));
     // vizGrid now contains the depth deltas from the origin cell
     *tempGrid = (*localTopo) - (*tempGrid);
     // slopeGrid now contains depth deltas divided by distance deltas, aka the
     //   slope from the center cell to each cell.
-    slopeGrid = tempGrid->cwiseQuotient(*distGradient);
+    slopeGrid = tempGrid->cwiseQuotient(*distanceGradient);
     // slopeGrid now has the slope from all cells to the center
     // viz grid has depth deltas
     set  < pair<int, int>> unprocessedCells;
     vector < pair<int, int>> interveningCells;
-    pair<int, int> origin = make_pair(rng, rng);
+    pair<int, int> origin = make_pair(sensorRange, sensorRange);
     double maxSlope = 0;
     // Add cells to process to a list.
     for (i = 0; i  <  sensorDiameter; i ++) {
@@ -670,8 +682,8 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
     // at this point, tempGrid has all the max slopes (LoS)
     //                 slopeGrid is free to use
     //                 localTopo still has topography
-    *solutionGrid = tempGrid->cwiseProduct(*distGradient).array() +
-                    (*localTopo)(rng, rng);
+    *solutionGrid = tempGrid->cwiseProduct(*distanceGradient).array() +
+                    (*localTopo)(sensorRange, sensorRange);
     // solutionGrid now has the max visible depths from the origin cell.
 }
 }  // namespace std

@@ -77,8 +77,7 @@ void Graph::printContour(vector <double> *contourLevels) {
 /**
  * Prints a graph of a given file with contour data as a .png file.
  * If a contour file was written [by calling printContour()], it prints
- * a contour graph.
- * Otherwise, no contour lines are drawn.
+ * a contour graph. Otherwise, no contour lines are drawn.
  * @param int width The width of the resulting image.
  * @param int height The height of the resulting image.
  * @param double *contourLevels A pointer to an array of integers holding

@@ -37,7 +37,8 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                    double sensorPeakDetectionProbability,
                    double SDofSensorDetectionRange);
 void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
-                           Eigen::MatrixXd* distGradient, double sensorPeakDetectionProbability,
+                           Eigen::MatrixXd* distGradient,
+                           double sensorPeakDetectionProbability,
                            double SDofSensorDetectionRange);
 void makeDistGradient(Eigen::MatrixXd* distGradient, int rng);
 double normalProb(double peak, double sd, double x);
