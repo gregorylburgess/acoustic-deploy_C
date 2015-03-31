@@ -132,6 +132,30 @@ double restrictMaxVizDepth(double x) {
     return x;
 }
 
+/**
+ * Precalculates a distanceGradient representing the probability of detection
+ *      for a given cell based on its distance from the center, then calls the
+ *      appropriate goodness function based on the given bias.
+ * @param topographyGrid A pointer to a Grid object containing topographic
+ *      information for the area of study.
+ * @param behaviorGrid A pointer to a Grid object containing the probability
+ *      distribution for the animal(s) being studied.
+ * @param goodnessGrid A pointer to an empty Grid object.  Resultant data
+ *      will be dumped here.
+ * @param bias An integer representing the bias for goodness to use.
+ *       Bias Meaning:
+ *          1: Choose areas of high animal density, ignoring bathymetry.
+ *          2: Choose areas with good visibility, ignoring animal density.
+ *          3: Choose areas with good visibility of animals (both visibility
+ *             and animal density are considered).
+ * @param sensorRange The maximum detection range of a sensor given in units
+ *      of grid cells.
+ * @param sensorPeakDetectionProbability The probability of detecting a fish
+ *      right next to the sensor.
+ * @param SDofSensorDetectionRange The standard deviation of sensor range,
+ *      determined by range testing.  Serves as a sigma value for the detection
+ * probability curve (a normal distribution).
+ */
 void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
                            Grid* goodnessGrid, int bias, int sensorRange,
                            double sensorPeakDetectionProbability,
@@ -171,6 +195,24 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
 /**
  * Simply sums the cells within sensorRange of each cell on the BehaviorGrid.
  * Results are written to goodnessGrid.
+ * @param topographyGrid A pointer to a Grid object containing topographic
+ *      information for the area of study.
+ * @param behaviorGrid A pointer to a Grid object containing the probability
+ *      distribution for the animal(s) being studied.
+ * @param goodnessGrid A pointer to an empty Grid object.  Resultant data
+ *      will be dumped here.
+ * @param distanceGradient A pointer to a matrix containing the distance of
+ *      each cell from the center.
+ * @param detectionGradient A pointer to a matrix containing the probability
+ *      (based on distance from the center cell) of detecting a tag in the
+ *      given cell.
+ * @param sensorRange The maximum detection range of a sensor given in units
+ *      of grid cells.
+ * @param sensorPeakDetectionProbability The probability of detecting a fish
+ *      right next to the sensor.
+ * @param SDofSensorDetectionRange The standard deviation of sensor range,
+ *      determined by range testing.  Serves as a sigma value for the detection
+ * probability curve (a normal distribution).
  */
 void goodFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
               Eigen::MatrixXd* distanceGradient,
@@ -197,7 +239,30 @@ void goodFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
     }
 }
 
-
+/**
+ * Determines the goodness of each cell in the study area based on percentage
+ * of the water column (in the surrounding cells) that can be seen. determines
+ * the average percentage of the water column visible from the current cell in
+ * each cell. Results are written to goodnessGrid.
+ * @param topographyGrid A pointer to a Grid object containing topographic
+ *      information for the area of study.
+ * @param behaviorGrid A pointer to a Grid object containing the probability
+ *      distribution for the animal(s) being studied.
+ * @param goodnessGrid A pointer to an empty Grid object.  Resultant data
+ *      will be dumped here.
+ * @param distanceGradient A pointer to a matrix containing the distance of
+ *      each cell from the center.
+ * @param detectionGradient A pointer to a matrix containing the probability
+ *      (based on distance from the center cell) of detecting a tag in the
+ *      given cell.
+ * @param sensorRange The maximum detection range of a sensor given in units
+ *      of grid cells.
+ * @param sensorPeakDetectionProbability The probability of detecting a fish
+ *      right next to the sensor.
+ * @param SDofSensorDetectionRange The standard deviation of sensor range,
+ *      determined by range testing.  Serves as a sigma value for the detection
+ * probability curve (a normal distribution).
+ */
 void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
              Eigen::MatrixXd* distanceGradient,
              Eigen::MatrixXd* detectionGradient, double sensorRange,
@@ -221,7 +286,7 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
 
     for (int r = border; r < rows-border; r++) {
         // out << "\n" << r;
-        cout  <<  (r +1 ) / endRow  <<  "\n";
+        cout  <<  (r + 1) / endRow  <<  "\n";
         for (int c = border; c < cols-border; c++) {
             // compute the visibility grid for each cell
             calcVizGrid(topographyGrid, distanceGradient, &visibilityGrid,
@@ -249,7 +314,30 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
 }
 
 
-
+/**
+ * Determines the goodness of each cell in the study area based on the number
+ * of fish that can be seen from each cell.
+ * the average percentage of the water column visible from the current cell in
+ * each cell. Results are written to goodnessGrid.
+ * @param topographyGrid A pointer to a Grid object containing topographic
+ *      information for the area of study.
+ * @param behaviorGrid A pointer to a Grid object containing the probability
+ *      distribution for the animal(s) being studied.
+ * @param goodnessGrid A pointer to an empty Grid object.  Resultant data
+ *      will be dumped here.
+ * @param distanceGradient A pointer to a matrix containing the distance of
+ *      each cell from the center.
+ * @param detectionGradient A pointer to a matrix containing the probability
+ *      (based on distance from the center cell) of detecting a tag in the
+ *      given cell.
+ * @param sensorRange The maximum detection range of a sensor given in units
+ *      of grid cells.
+ * @param sensorPeakDetectionProbability The probability of detecting a fish
+ *      right next to the sensor.
+ * @param SDofSensorDetectionRange The standard deviation of sensor range,
+ *      determined by range testing.  Serves as a sigma value for the detection
+ *      probability curve (a normal distribution).
+ */
 void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                     Grid* goodnessGrid, Eigen::MatrixXd* distanceGradient,
                    Eigen::MatrixXd* detectionGradient, double sensorRange,
@@ -364,7 +452,12 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
 }
 
 
-
+/**
+ * Offsets a Cartesian coordinate to the center of a cell.'
+ * @param point A pointer to a Pair object containing the x and y Cartesian
+ * coordinates to offset.
+ * @return A new, offset point.
+ */
 pair<int, int> offset(const pair<int, int> *point) {
     pair<int, int> newPoint = make_pair(point->first + .5, point->second + .5);
     return newPoint;
@@ -372,7 +465,11 @@ pair<int, int> offset(const pair<int, int> *point) {
 
 /**
  * Gets a set of cell locations that intersect a beam between the origin cell
- *    and a target cell. Pairs are configured as (x, y), (column, row).
+ * and a target cell. Pairs are configured as (x, y), (column, row).
+ * @param origin A pointer to a Pair object that indicates the origin cell.
+ * @param target A pointer to a Pair object that indicates the terminal cell.
+ * @return A vector containing Pairs that intersect a line drawn between the
+ *      two points.
  */
 vector < pair<int, int>> getCells(const pair  < int, int> *origin,
                                const pair  < int, int> *target) {
@@ -442,7 +539,7 @@ vector < pair<int, int>> getCells(const pair  < int, int> *origin,
         pairs.insert(*target);
         pairs.erase(*origin);
 
-        // c opy to vector
+        // copy to vector
         vector <pair< int, int>> vpairs(pairs.begin(), pairs.end());
         // Sort pairs by distance from origin
         sortByDist sorter(origin->first, origin->second);
@@ -456,7 +553,14 @@ vector < pair<int, int>> getCells(const pair  < int, int> *origin,
     }
 }
 
-
+/**
+ * Computes the distanceGradient for a given square matrix. Results are
+ * dumped to distGradient.
+ * The resulting matrix contains each cell's distance from the center cell.
+ * @param distGradient A pointer to an empty matrix.
+ * @param rng The maximum detection range of a sensor.  This determines the
+ *      size of the grid.
+ */
 void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
     int size = 2 * rng + 1;
     Eigen::MatrixXd X;
@@ -477,9 +581,21 @@ void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
     (*distGradient)(rng, rng) = 1;
 }
 
+/**
+ * Computes the detectionGradient for a given distanceGradient. Results are
+ * dumped to detectionGradient.
+ * @param detectionGradient A pointer to an empty matrix.
+ * @param distanceGradient A pointer to a matrix containing the
+ *      distanceGradient generated by makeDistGradient().
+ * @param sensorPeakDetectionProbability The probability of detecting a tag
+ *      right next to a sensor.
+ * @param SDofSensorDetectionRange The standard deviation of sensor range,
+ *      determined by range testing.  Serves as a sigma value for the detection
+ */
 void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
-                           Eigen::MatrixXd* distGradient, double peak,
-                           double sd) {
+                           Eigen::MatrixXd* distGradient,
+                           double sensorPeakDetectionProbability,
+                           double SDofSensorDetectionRange) {
     int rows = distGradient->rows(),
         cols = distGradient->cols(),
         r = 0,
