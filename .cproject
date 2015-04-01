@@ -29,6 +29,11 @@
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.934734355" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.1159320085" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
+								<option id="gnu.c.compiler.option.dialect.std.1079943411" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.warnings.extrawarn.1449450568" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.warnings.wconversion.266172764" superClass="gnu.c.compiler.option.warnings.wconversion" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.misc.ansi.1942440623" superClass="gnu.c.compiler.option.misc.ansi" value="true" valueType="boolean"/>
+								<option id="gnu.c.compiler.option.misc.verbose.2093465093" superClass="gnu.c.compiler.option.misc.verbose" value="true" valueType="boolean"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1898822532" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.1755498671" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>
