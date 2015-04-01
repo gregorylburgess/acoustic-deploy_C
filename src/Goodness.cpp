@@ -139,8 +139,8 @@ double restrictMaxVizDepth(double x) {
 
 /**
  * Precalculates a distanceGradient representing the probability of detection
- *      for a given cell based on its distance from the center, then calls the
- *      appropriate goodness function based on the given bias.
+ * for a given cell based on its distance from the center, then calls the
+ * appropriate goodness function based on the given bias.
  * @param topographyGrid A pointer to a Grid object containing topographic
  *      information for the area of study.
  * @param behaviorGrid A pointer to a Grid object containing the probability
@@ -607,8 +607,11 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
         c = 0;
     for (r = 0; r  <  rows; r ++) {
         for (c = 0; c  <  cols; c ++) {
-            (*detectionGradient)(r, c) = normalProb(peak, sd,
-                                         (*distGradient)(r, c));
+            (*detectionGradient)(r, c) = normalProb(
+                                                sensorPeakDetectionProbability,
+                                                SDofSensorDetectionRange,
+                                                (*distGradient)(r, c)
+                                                );
         }
     }
 }

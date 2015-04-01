@@ -20,7 +20,7 @@
 #include "Utility.h"
 
 int main() {
-    bool test = false, simulateBathy = false;
+    bool test = true, simulateBathy = false;
 
     if (test) {
         runTests();

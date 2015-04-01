@@ -11,4 +11,5 @@
 namespace std {
 unordered_map <string, string> acousticParams = {};
 int border = 0;
+double tolerance = .00000001;
 }  // namespace std

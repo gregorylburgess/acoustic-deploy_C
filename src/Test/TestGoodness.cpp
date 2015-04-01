@@ -10,7 +10,7 @@ using namespace std;
 double tolerance = .01;
 
 /**
- * Executes all tests in TestGoodness.cpp.  Returns true if all tests pass, flase otherwise.
+ * Executes all tests in TestGoodness.cpp.  Returns true if all tests pass, false otherwise.
  */
 bool runGoodnessTests() {
 	bool success = (
@@ -22,8 +22,9 @@ bool runGoodnessTests() {
 			positiveHorizontal() &&
 			positiveSlow() &&
 			positiveSteep() &&
-			positiveVertical()&&
-			checkCalcPercentViz()
+			positiveVertical() &&
+			checkCalcPercentViz() &&
+			checkDistGradient()
 			);
 	if (success) {
 		cout<<"All Goodness Tests Passed!";
@@ -34,7 +35,57 @@ bool runGoodnessTests() {
 	return success;
 }
 
+/**Compares two numbers, checking if the difference is within an acceptable
+ * tolerance.
+ */
+bool compare(double expectedValue, double receivedValue) {
+    double delta = abs(expectedValue - receivedValue);
+    if (delta > tolerance) {
+        return false;
+    }
+    return true;
+}
 
+/**
+ * Compares two Eigen Matricies, returning true if they're both within
+ */
+bool compareMatrix(Eigen::MatrixXd* expectedMatirx,
+                   Eigen::MatrixXd* receivedMatrix, string functionName) {
+    int i = 0,
+        j = 0,
+        size = expectedMatirx->rows();
+    Eigen::MatrixXd delta = (*expectedMatirx) - (*receivedMatrix);
+    for(i=0;i<size;i++) {
+        for(j=0;j<size;j++) {
+            if (delta(i,j) > tolerance) {
+                cout << "Error in " << functionName << "\nExpected value: "
+                     << (*expectedMatirx)(i,j) << "\nRecieved value: "
+                     << (*receivedMatrix)(i,j) << " @ " << i << ", " << j
+                     <<"\n";
+                return false;
+            }
+        }
+    }
+    cout << "Passed: " << functionName << "\n";
+    return true;
+}
+
+bool checkDistGradient() {
+    //a 5x5 matrix
+    int rng = 2,
+        size = 2 * rng + 1;
+    Eigen::MatrixXd solution;
+    Eigen::MatrixXd distanceGradient;
+    solution.resize(size,size);
+    solution << 2.82843,   2.23607,  2,  2.23607,  2.82843,
+                2.23607,   1.41421,  1,  1.41421,  2.23607,
+                      2,         1,  1,        1,        2,
+                2.23607,   1.41421,  1,  1.41421,  2.23607,
+                2.82843,   2.23607,  2,  2.23607,  2.82843;
+
+    makeDistGradient(&distanceGradient, 2);
+    return compareMatrix(&distanceGradient, &solution, "checkDistGradient");
+}
 /**
  * Calls calcPercentViz() with a square matrix to test LoS correctness.
  */
@@ -46,31 +97,20 @@ bool checkCalcPercentViz () {
 						-1, -7,  -7, -7, -8,
 						-1, -1, -14, -8, -8;
 	Grid* solution = new Grid(5, 5, "Solution");
-	solution->data <<     4.94975,          7,         7,         7,   4.94975,
-						  4.94975,   4.94975,         7,   4.94975,   4.94975,
-							 -3.5,        -7,         0,         7,         7,
-						-0.447214,  -4.94975,        -7,  -4.94975,         7,
-						-0.353553, -0.447214,        -7,  -3.57771,  -2.82843;
+	solution->data <<   14, 15.6525,  14, 15.6525,      14,
+                    11.068,       7,   7,       7,  11.068,
+                        -7,      -7,    0,       7,      14,
+                        -1,      -7,  -7,      -7, 15.6525,
+                        -1,      -1, -14,      -8,      -8;
+
 	Eigen::MatrixXd distGradient;
 	makeDistGradient(&distGradient,2);
 	Eigen::MatrixXd result;
 	Eigen::MatrixXd localTopo;
 	Eigen::MatrixXd temp;
 	calcVizGrid(challenge, &distGradient, &result, &localTopo, &temp, 2, 2, 2);
-	Eigen::MatrixXd delta = solution->data - result;
-	delta = delta.cwiseAbs();
-	int i=0,j=0;
-	for(i=0;i<challenge->data.rows();i++){
-		for(j=0;j<challenge->data.cols();j++) {
-			if(delta(i,j) > tolerance) {
-				cout << "ERROR!\nExpected value: " << solution->data(i,j)
-					 <<"\nRecieved value: "<< result(i,j) << " @ "<< i<< ", " << j <<"\n";
-				return false;
-			}
-		}
-	}
-	cout << "Passed: checkCalcPercentViz\n";
-	return true;
+	temp = solution->data;
+	return compareMatrix(&result, &temp, "checkCalcPercentViz");
 }
 
 

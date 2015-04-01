@@ -1,11 +1,15 @@
 #pragma once
 #include <set>
 #include <string>
+#include <Dense>
 using namespace std;
 
 bool runGoodnessTests();
-bool checkCalcPercentViz();
 bool check(std::pair<double,double> *origin, std::pair<double,double> *target, std::set<std::pair<double,double>> *solution, string errorMsg);
+bool checkCalcPercentViz();
+bool checkDistGradient();
+bool compare(double expectedValue, double receivedValue);
+bool compareMatrix(Eigen::MatrixXd* expectedMatirx, Eigen::MatrixXd* receivedMatrix, string functionName);
 bool positiveSteep();
 bool negativeSteep();
 bool positiveSlow();
