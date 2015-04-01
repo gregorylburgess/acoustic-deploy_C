@@ -94,7 +94,7 @@ double normalDist(double sd, double x) {
  *         is a normal distribution defined by sd.
  */
 double normalProb(double peak, double sd, double x) {
-    return peak*(normalDist(sd, x)/normalDist(sd, 0));
+    return peak*(normalDist(sd, abs(x))/normalDist(sd, 0));
 }
 
 /**

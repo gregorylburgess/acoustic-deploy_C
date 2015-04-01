@@ -6,8 +6,11 @@
 #include "../Utility.h"
 #include "TestGoodness.h"
 using namespace std;
+//Don't set this too low, as we'll get errors when using compiler
+    //optimization... (google "floating point comparison c++")
+double tolerance = 0.0001;
 
-double tolerance = .01;
+
 
 /**
  * Executes all tests in TestGoodness.cpp.  Returns true if all tests pass, false otherwise.
@@ -24,23 +27,75 @@ bool runGoodnessTests() {
 			positiveSteep() &&
 			positiveVertical() &&
 			checkCalcPercentViz() &&
-			checkDistGradient()
+			checkDistGradient()&&
+			checkDetectionGradient() &&
+			checkNormalProb() &&
+			checkCDistPartition() &&
+			checkCalculateGoodness()
 			);
 	if (success) {
 		cout<<"All Goodness Tests Passed!";
 	}
 	else {
-		cout<<"Failures occured!";
+		cout<<"Failures occurred!";
 	}
 	return success;
 }
 
+
+bool checkCalculateGoodness() {
+    calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
+                              Grid* goodnessGrid, int bias, int range,
+                              double peak, double sd);
+}
+/**
+ * Checks the cumulative distribution functions.
+ */
+bool checkCDistPartition() {
+    int i = 0,
+            size = 9;
+        double start[9] = {-3, -2, -1,  0, 0, -3, -.5, -1, 1},
+               end[9] =   {0,   0,  0,  1, 0,  3,  .5,  1, 0},
+               solution[9] = {0.49865, 0.47725, 0.341345, 0.341345, 0, 0.9973, 0.382925, 0.682689, -0.341345},
+               result[9],
+               sd = 1,
+               mean = 0;
+        for(i = 0;i < size;i ++) {
+            result[i] = cdistPartition(mean,  sd,  start[i],  end[i]);
+            compare(result[i], solution[i], "checkNormalProb");
+        }
+        cout << "Passed: " << "checkCDistPartition\n";
+        return true;
+}
+/**
+ * Checks the normal distribution functions.
+ */
+bool checkNormalProb() {
+    int i = 0,
+        size = 9;
+    double challenge[9] = {-3, -2, -1, -0.5, 0, .5, 1, 2, 3},
+           solution[9] = {0.011109, 0.135335, 0.606531, 0.882497, 1, 0.882497, 0.606531, 0.135335, 0.011109},
+           result[9],
+           peak = 1,
+           sd = 1;
+    for(i = 0;i < size;i ++) {
+        result[i] = normalProb(peak, sd,challenge[i]);
+        compare(result[i], solution[i], "checkNormalProb");
+    }
+    cout << "Passed: " << "checkNormalProb\n";
+    return true;
+}
+
+
 /**Compares two numbers, checking if the difference is within an acceptable
  * tolerance.
  */
-bool compare(double expectedValue, double receivedValue) {
+bool compare(double expectedValue, double receivedValue, string functionName) {
     double delta = abs(expectedValue - receivedValue);
-    if (delta > tolerance) {
+    if (delta >= tolerance) {
+        cout << "Error in " << functionName << "\nExpected value: "
+                             << expectedValue << "\nRecieved value: "
+                             << receivedValue <<"\n";
         return false;
     }
     return true;
@@ -54,10 +109,14 @@ bool compareMatrix(Eigen::MatrixXd* expectedMatirx,
     int i = 0,
         j = 0,
         size = expectedMatirx->rows();
-    Eigen::MatrixXd delta = (*expectedMatirx) - (*receivedMatrix);
-    for(i=0;i<size;i++) {
-        for(j=0;j<size;j++) {
-            if (delta(i,j) > tolerance) {
+    Eigen::MatrixXd delta;
+    delta.setConstant(0);
+    delta = (*expectedMatirx) - (*receivedMatrix);
+    delta = delta.cwiseAbs();
+    for(i = 0;i < size;i ++) {
+        for(j = 0;j < size;j ++) {
+            if (delta(i, j) > tolerance) {
+                cout << delta (i,j);
                 cout << "Error in " << functionName << "\nExpected value: "
                      << (*expectedMatirx)(i,j) << "\nRecieved value: "
                      << (*receivedMatrix)(i,j) << " @ " << i << ", " << j
@@ -69,6 +128,30 @@ bool compareMatrix(Eigen::MatrixXd* expectedMatirx,
     cout << "Passed: " << functionName << "\n";
     return true;
 }
+
+
+bool checkDetectionGradient() {
+    //a 5x5 matrix
+        int rng = 2,
+            size = 2 * rng + 1;
+        double sensorPeakDetectionProbability = 1,
+               SDofSensorDetectionRange = 1;
+        Eigen::MatrixXd solution;
+        Eigen::MatrixXd distanceGradient;
+        Eigen::MatrixXd detectionGradient;
+        solution.resize(size,size);
+        solution << 0.0183156,  0.082085,  0.135335,  0.082085, 0.0183156,
+                     0.082085,  0.367879,  0.606531,  0.367879,  0.082085,
+                     0.135335,  0.606531,  0.606531,  0.606531,  0.135335,
+                     0.082085,  0.367879,  0.606531,  0.367879,  0.082085,
+                    0.0183156,  0.082085,  0.135335,  0.082085, 0.0183156;
+        makeDistGradient(&distanceGradient, 2);
+        detectionGradient.resize(size,size);
+        makeDetectionGradient(&detectionGradient, &distanceGradient,
+                sensorPeakDetectionProbability, SDofSensorDetectionRange);
+        return compareMatrix(&solution, &detectionGradient, "checkDetectionGradient");
+}
+
 
 bool checkDistGradient() {
     //a 5x5 matrix
