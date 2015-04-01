@@ -1,4 +1,11 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : Utility.cpp
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Useful utility functions.
+//============================================================================
+
 #ifndef SRC_UTILITY_H_
 #define SRC_UTILITY_H_
 #include <set>

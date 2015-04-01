@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : GlobalVars.h
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Definitions of global objects.
+//============================================================================
 #ifndef SRC_GLOBALVARS_H_
 #define SRC_GLOBALVARS_H_
 #pragma once

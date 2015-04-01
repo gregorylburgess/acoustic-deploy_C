@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : FishModel.cpp
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Functions for modeling fish behavior.
+//============================================================================
 #include <stdlib.h>
 #include <math.h>
 #include <Dense>

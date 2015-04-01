@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : Graph.cpp
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : A class definition for a Graph object.
+//============================================================================
 #include <stdlib.h>
 #include <iostream>
 #include <iomanip>
@@ -14,7 +20,7 @@ namespace std {
 /** Graph Constructor.  Creates a Graph object from a Grid object.
  *  @param Grid* g A pointer to a Grid object.
  */
-Graph::Graph(Grid* g) {
+Graph::Graph(Grid* g){
     contour = false;
     grid = g;
     contourDataFile = "data/contour.dat";

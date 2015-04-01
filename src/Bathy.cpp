@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : Bathy.cpp
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Functions for reading and simulating Bathymetry.
+//============================================================================
 #include <math.h>
 #include <string.h>
 #include <netcdf.h>

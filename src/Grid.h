@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : Grid.h
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : A class definition for a Grid object.
+//============================================================================
 #ifndef SRC_GRID_H_
 #define SRC_GRID_H_
 #include <Dense>

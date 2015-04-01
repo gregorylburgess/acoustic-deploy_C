@@ -1,9 +1,9 @@
 //============================================================================
-// Name        : acousticDeploy_C.cpp
+// Name        : Bathy.h
 // Author      : Greg Burgess
 // Version     : 1.0
-// Copyright   : Your copyright notice
-// Description : Hello World in C++, Ansi-style
+// Copyright   : Copyright 2014
+// Description : Functions for reading and simulating Bathymetry.
 //============================================================================
 #ifndef SRC_BATHY_H_
 #define SRC_BATHY_H_

@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : Main.cpp
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Runs the program.
+//============================================================================
 #include <stdlib.h>
 #include <time.h>
 #include <algorithm>

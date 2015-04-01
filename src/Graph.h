@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : Graph.h
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : A class definition for a Graph object.
+//============================================================================
 #ifndef SRC_GRAPH_H_
 #define SRC_GRAPH_H_
 #pragma once

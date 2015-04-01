@@ -1,5 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
-
+//============================================================================
+// Name        : Goodness.cpp
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Functions for various goodness computations.
+//============================================================================
 #include  <stdlib.h>
 #include  <Dense>
 #include  <algorithm>

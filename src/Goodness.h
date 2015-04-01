@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : Goodness.h
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Functions for various goodness computations.
+//============================================================================
 #ifndef SRC_GOODNESS_H_
 #define SRC_GOODNESS_H_
 #include <Dense>

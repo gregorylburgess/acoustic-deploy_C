@@ -1,4 +1,10 @@
-/** Copyright 2015 Greg Burgess. **/
+//============================================================================
+// Name        : FishModel.cpp
+// Author      : Greg Burgess
+// Version     : 1.0
+// Copyright   : Copyright 2014
+// Description : Functions for modeling fish behavior.
+//============================================================================
 #ifndef SRC_FISHMODEL_H_
 #define SRC_FISHMODEL_H_
 #pragma once
