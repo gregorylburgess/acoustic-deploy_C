@@ -16,15 +16,16 @@
 #include "GlobalVars.h"
 #include "Goodness.h"
 #include "Graph.h"
-#include "Test/Test.h"
 #include "Utility.h"
+#include "Test/Test.h"
+#include "Test/TestGoodness.h"
 
 int main() {
     bool test = true, simulateBathy = false;
 
     if (test) {
         runTests();
-        cout << "Done";
+        std::cout << "Done";
         return 0;
     }
 
@@ -58,29 +59,37 @@ int main() {
     int startRow = 100,
         startCol = 0,  // 450,340,200,200 (1km)
         RowDist = 800, ColDist = 1500, height = 800, width = 1500, i = 0,
-        bias = 3, sensorRange = 4, peak = 1, sd = 1;
-    string token;
+        bias = 3, sensorRange = 4, peak = 1, sd = 1,
+        cellSize = std::stoi(acousticParams["cellSize"]);
+    double ousdx = std::stod(acousticParams["ousdx"]),
+           ousdy = std::stod(acousticParams["ousdy"]),
+           oucor = std::stod(acousticParams["oucor"]),
+           mux = std::stod(acousticParams["mux"]),
+           muy   = std::stod(acousticParams["muy"]);
+    double fishmodel = std::stod(acousticParams["fishmodel"]);
+    std::string token;
     border = sensorRange;
     clock_t begin, end, vizBegin, vizEnd;
     double vizDelta, timeSpent;
     begin = clock();
     // Compute contour depth meta data (used for graphical output)
-    istringstream contourString(acousticParams["contourDepths"]);
+    std::istringstream contourstring(acousticParams["contourDepths"]);
     size_t numContourDepths = count(acousticParams["contourDepths"].begin(),
                                     acousticParams["contourDepths"].end(), ',')
                                     + 1;
 
-    acousticParams.insert({ "numContourDepths", to_string(numContourDepths) });
-    vector<double> contourLevels(numContourDepths);
+    acousticParams.insert({ "numContourDepths",
+                            std::to_string(numContourDepths) });
+    std::vector<double> contourLevels(numContourDepths);
     i = 0;
-    while (getline(contourString, token, ',')) {
-        contourLevels.push_back(stod(token));
+    while (getline(contourstring, token, ',')) {
+        contourLevels.push_back(std::stod(token));
         i++;
     }
     sort(&contourLevels, &contourLevels + numContourDepths);
 
     // File path variables
-    string outputDataFilePath = "data/", outputDataFileType = ".dat",
+    std::string outputDataFilePath = "data/", outputDataFileType = ".dat",
            bathymetryTitle = "Topography", habitatTitle = "Habitat",
            goodnessTitle = "Goodness",
            coverageTitle = "Acoustic Coverage",
@@ -98,7 +107,7 @@ int main() {
     Grid tGrid(RowDist + 2 * border, ColDist + 2 * border, "Topography");
     tGrid.data.setConstant(0);
     // Fetch or simulate topography
-    cout << "Geting topography";
+    std::cout << "Geting topography";
     if (simulateBathy) {
         simulatetopographyGrid(&tGrid, RowDist, ColDist);
     } else {
@@ -108,11 +117,12 @@ int main() {
                  acousticParams["seriesName"], acousticParams["timestamp"]);
     }
 
-    cout << "\nGetting Behavior";
+    std::cout << "\nGetting Behavior";
     // Fill in Behavior Grid
-    populateBehaviorGrid(&tGrid, &bGrid);
+    populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy, oucor, mux,
+                         muy, fishmodel);
     vizBegin = clock();
-    cout << "\nGetting Goodness";
+    std::cout << "\nGetting Goodness";
     // Calculate good sensor locations
     calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, bias, sensorRange, peak, sd);
     vizEnd = clock();
@@ -123,7 +133,7 @@ int main() {
     Graph bGraph = Graph(&bGrid);
 
     // A pointer to the array with the Contour depths
-    vector<double> *contourPtr = &contourLevels;
+    std::vector<double> *contourPtr = &contourLevels;
     // Generate graphs
     try {
         // Print the matrix & data files for Topography Grid
@@ -147,15 +157,14 @@ int main() {
         // Graph Goodness Grid with contour lines.
         gGraph.printContourGraph(width, height, contourPtr, false);
     } catch (int e) {
-        cout << "Error:" << e << "\n";
+        std::cout << "Error:" << e << "\n";
         return 0;
     }
 
     end = clock();
     vizDelta = static_cast<double>(vizEnd - vizBegin) / CLOCKS_PER_SEC;
-    cout << "\nVisibility calculation took " << vizDelta << " s";
+    std::cout << "\nVisibility calculation took " << vizDelta << " s";
     timeSpent = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
-    cout << "\nEntire Run took " << timeSpent << " s";
-
+    std::cout << "\nEntire Run took " << timeSpent << " s";
     return 0;
 }

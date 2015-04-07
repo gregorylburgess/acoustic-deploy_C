@@ -11,15 +11,15 @@
 #include <vector>
 #include "Grid.h"
 #include "Utility.h"
-namespace std {
+#include "GlobalVars.h"
+
 void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols);
-void getBathy(Grid* topographyGrid, string inputFile,
-              string inputFileType, size_t startRow, size_t startCol,
-              size_t numRows, size_t numCols, string seriesName,
-              string timestamp);
-void splitVec(string *s, char delim,
-              vector<string> *elems);
-vector<string> split(string *s, char delim);
+void getBathy(Grid* topographyGrid, std::string inputFile,
+              std::string inputFileType, size_t startRow, size_t startCol,
+              size_t numRows, size_t numCols, std::string seriesName,
+              std::string timestamp);
+void splitVec(std::string *s, char delim,
+              std::vector<std::string> *elems);
+std::vector<std::string> split(std::string *s, char delim);
 double zero(double x);
-}  // namespace std
 #endif  // SRC_BATHY_H_

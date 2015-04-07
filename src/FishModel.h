@@ -7,14 +7,13 @@
 //============================================================================
 #ifndef SRC_FISHMODEL_H_
 #define SRC_FISHMODEL_H_
-#pragma once
 #include "Grid.h"
 #include <unordered_map>
-namespace std {
 double bivariateNorm(double x, double y, double mux, double muy, double sdx,
                      double sdy, double cor);
-Grid* populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid);
+Grid* populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
+                     int cellSize, double ousdx, double ousdy, double oucor,
+                     double mux, double muy, int fishmodel);
 double isNonNeg(double x);
 double isNonPos(double x);
-}  // namespace std
 #endif  // SRC_FISHMODEL_H_

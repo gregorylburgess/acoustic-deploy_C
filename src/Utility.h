@@ -11,12 +11,12 @@
 #include <set>
 #include <string>
 #include <utility>
-namespace std {
-void printError(string msg, int errcode, string timestamp);
-void printGraph(string title, int XDist, int YDist,
-                string dataFilePath, int width, int height);
+#include "GlobalVars.h"
+
+void printError(std::string msg, int errcode, std::string timestamp);
+void printGraph(std::string title, int XDist, int YDist,
+                std::string dataFilePath, int width, int height);
 double* seq(double start, double end, int size);
-bool fexists(string filename);
-void printSet(set<pair<int, int> > *pairs);
-}  // namespace std
+bool fexists(std::string filename);
+void printSet(std::set<std::pair<int, int> > *pairs);
 #endif  // SRC_UTILITY_H_

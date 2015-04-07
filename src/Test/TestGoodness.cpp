@@ -3,15 +3,12 @@
 #include <set>
 #include <string>
 #include "../Goodness.h"
-#include "../Utility.h"
+#include "../Bathy.h"
 #include "TestGoodness.h"
-using namespace std;
+
 //Don't set this too low, as we'll get errors when using compiler
     //optimization... (google "floating point comparison c++")
 double tolerance = 0.0001;
-
-
-
 /**
  * Executes all tests in TestGoodness.cpp.  Returns true if all tests pass, false otherwise.
  */
@@ -34,19 +31,33 @@ bool runGoodnessTests() {
 			checkCalculateGoodness()
 			);
 	if (success) {
-		cout<<"All Goodness Tests Passed!";
+		std::cout<<"All Goodness Tests Passed!";
 	}
 	else {
-		cout<<"Failures occurred!";
+		std::cout<<"Failures occurred!";
 	}
 	return success;
 }
 
 
 bool checkCalculateGoodness() {
-    calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
-                              Grid* goodnessGrid, int bias, int range,
-                              double peak, double sd);
+    /*  int numRows = 10,
+        numCols = 10,
+        range = 2,
+        i=0;
+    double peak = 1, sd = 1;
+    Grid bGrid(numRows + 2 * border, numCols + 2 * border, "Behavior");
+    Grid gGrid(numRows + 2 * border, numCols + 2 * border, "Goodness");
+    Grid tGrid(numRows + 2 * border, numCols + 2 * border, "Topography");
+
+    simulatetopographyGrid(&tGrid, numRows, numCols);
+
+    for (i=0; i<3; i++) {
+       calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, i,
+                              range, peak, sd);
+    }
+*/
+    return true;
 }
 /**
  * Checks the cumulative distribution functions.
@@ -64,7 +75,7 @@ bool checkCDistPartition() {
             result[i] = cdistPartition(mean,  sd,  start[i],  end[i]);
             compare(result[i], solution[i], "checkNormalProb");
         }
-        cout << "Passed: " << "checkCDistPartition\n";
+        std::cout << "Passed: " << "checkCDistPartition\n";
         return true;
 }
 /**
@@ -82,7 +93,7 @@ bool checkNormalProb() {
         result[i] = normalProb(peak, sd,challenge[i]);
         compare(result[i], solution[i], "checkNormalProb");
     }
-    cout << "Passed: " << "checkNormalProb\n";
+    std::cout << "Passed: " << "checkNormalProb\n";
     return true;
 }
 
@@ -90,10 +101,10 @@ bool checkNormalProb() {
 /**Compares two numbers, checking if the difference is within an acceptable
  * tolerance.
  */
-bool compare(double expectedValue, double receivedValue, string functionName) {
+bool compare(double expectedValue, double receivedValue, std::string functionName) {
     double delta = abs(expectedValue - receivedValue);
     if (delta >= tolerance) {
-        cout << "Error in " << functionName << "\nExpected value: "
+        std::cout << "Error in " << functionName << "\nExpected value: "
                              << expectedValue << "\nRecieved value: "
                              << receivedValue <<"\n";
         return false;
@@ -105,7 +116,7 @@ bool compare(double expectedValue, double receivedValue, string functionName) {
  * Compares two Eigen Matricies, returning true if they're both within
  */
 bool compareMatrix(Eigen::MatrixXd* expectedMatirx,
-                   Eigen::MatrixXd* receivedMatrix, string functionName) {
+                   Eigen::MatrixXd* receivedMatrix, std::string functionName) {
     int i = 0,
         j = 0,
         size = expectedMatirx->rows();
@@ -116,8 +127,8 @@ bool compareMatrix(Eigen::MatrixXd* expectedMatirx,
     for(i = 0;i < size;i ++) {
         for(j = 0;j < size;j ++) {
             if (delta(i, j) > tolerance) {
-                cout << delta (i,j);
-                cout << "Error in " << functionName << "\nExpected value: "
+                std::cout << delta (i,j);
+                std::cout << "Error in " << functionName << "\nExpected value: "
                      << (*expectedMatirx)(i,j) << "\nRecieved value: "
                      << (*receivedMatrix)(i,j) << " @ " << i << ", " << j
                      <<"\n";
@@ -125,7 +136,7 @@ bool compareMatrix(Eigen::MatrixXd* expectedMatirx,
             }
         }
     }
-    cout << "Passed: " << functionName << "\n";
+    std::cout << "Passed: " << functionName << "\n";
     return true;
 }
 
@@ -200,22 +211,22 @@ bool checkCalcPercentViz () {
 /**
  * Calls getCells() with the given origin and target parameters, and compares the result to the solution parameter.  If they match, return true.
  */
-bool testGetCells(pair<int,int> *origin, pair<int,int> *target, set<pair<int,int>> *solution, string errorMsg) {
-	vector<pair<int,int>> vec = getCells(origin, target);
-	set<pair<int,int>> pairs(vec.begin(),vec.end());
-		for (set<pair<int,int> >::iterator it = pairs.begin(); it != pairs.end(); ++it) {
-			pair<int,int>  i = *it;
+bool testGetCells(std::pair<int,int> *origin, std::pair<int,int> *target, std::set<std::pair<int,int>> *solution, std::string errorMsg) {
+	std::vector<std::pair<int,int>> vec = getCells(origin, target);
+	std::set<std::pair<int,int>> pairs(vec.begin(),vec.end());
+		for (std::set<std::pair<int,int> >::iterator it = pairs.begin(); it != pairs.end(); ++it) {
+			std::pair<int,int>  i = *it;
 			if(pairs.find(i)==pairs.end()) {
-				cout<<"ERROR in :"<<errorMsg<<".\n";
-				cout<<"Expected:\n";
+				std::cout<<"ERROR in :"<<errorMsg<<".\n";
+				std::cout<<"Expected:\n";
 				printSet(solution);
-				cout<<"\n";
-				cout<<"Recieved:\n";
+				std::cout<<"\n";
+				std::cout<<"Recieved:\n";
 				printSet(&pairs);
 				return false;
 			}
 		}
-		cout<<"Passed: "<<errorMsg <<"\n";
+		std::cout<<"Passed: "<<errorMsg <<"\n";
 		return true;
 }
 
@@ -225,15 +236,15 @@ bool testGetCells(pair<int,int> *origin, pair<int,int> *target, set<pair<int,int
  * Calls getcells() with a positive steep slope.
  */
 bool positiveSteep() {
-	pair<int,int> origin = make_pair(1,1),
-				  target = make_pair(2,5);
-	set<pair<int,int>>  solution = {
-											make_pair(1,2),
-											make_pair(1,3),
-											make_pair(2,3),
-											make_pair(2,4),
-											make_pair(2,5)};
-	string errorMsg = "positiveSteep";
+	std::pair<int,int> origin = std::make_pair(1,1),
+				  target = std::make_pair(2,5);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(1,2),
+											std::make_pair(1,3),
+											std::make_pair(2,3),
+											std::make_pair(2,4),
+											std::make_pair(2,5)};
+	std::string errorMsg = "positiveSteep";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -241,15 +252,15 @@ bool positiveSteep() {
  * Calls getcells() with a negative steep slope.
  */
 bool negativeSteep() {
-	pair<int,int> origin = make_pair(2,5),
-							 target = make_pair(1,1);
-	set<pair<int,int>>  solution = {
-											make_pair(1,1),
-											make_pair(1,2),
-											make_pair(1,3),
-											make_pair(2,3),
-											make_pair(2,4)};
-	string errorMsg = "negativeSteep";
+	std::pair<int,int> origin = std::make_pair(2,5),
+							 target = std::make_pair(1,1);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(1,1),
+											std::make_pair(1,2),
+											std::make_pair(1,3),
+											std::make_pair(2,3),
+											std::make_pair(2,4)};
+	std::string errorMsg = "negativeSteep";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -257,15 +268,15 @@ bool negativeSteep() {
  * Calls getcells() with a positive slow slope.
  */
 bool positiveSlow() {
-	pair<int,int> origin = make_pair(1,1),
-				  target = make_pair(5,2);
-	set<pair<int,int>>  solution = {
-											make_pair(2,1),
-											make_pair(3,1),
-											make_pair(3,2),
-											make_pair(4,2),
-											make_pair(5,2)};
-	string errorMsg = "positiveSlow";
+	std::pair<int,int> origin = std::make_pair(1,1),
+				  target = std::make_pair(5,2);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(2,1),
+											std::make_pair(3,1),
+											std::make_pair(3,2),
+											std::make_pair(4,2),
+											std::make_pair(5,2)};
+	std::string errorMsg = "positiveSlow";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -273,15 +284,15 @@ bool positiveSlow() {
  * Calls getcells() with a negative slow slope.
  */
 bool negativeSlow() {
-	pair<int,int> origin = make_pair(5,2),
-				  target = make_pair(1,1);
-	set<pair<int,int>>  solution = {
-											make_pair(1,1),
-											make_pair(2,1),
-											make_pair(3,1),
-											make_pair(3,2),
-											make_pair(4,2)};
-	string errorMsg = "negativeSlow";
+	std::pair<int,int> origin = std::make_pair(5,2),
+				  target = std::make_pair(1,1);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(1,1),
+											std::make_pair(2,1),
+											std::make_pair(3,1),
+											std::make_pair(3,2),
+											std::make_pair(4,2)};
+	std::string errorMsg = "negativeSlow";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -289,14 +300,14 @@ bool negativeSlow() {
  * Calls getcells() with a positive horizontal slope.
  */
 bool positiveHorizontal() {
-	pair<int,int> origin = make_pair(1,1),
-				  target = make_pair(5,1);
-	set<pair<int,int>>  solution = {
-											make_pair(2,1),
-											make_pair(3,1),
-											make_pair(4,1),
-											make_pair(5,1)};
-	string errorMsg = "positiveHorizontal";
+	std::pair<int,int> origin = std::make_pair(1,1),
+				  target = std::make_pair(5,1);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(2,1),
+											std::make_pair(3,1),
+											std::make_pair(4,1),
+											std::make_pair(5,1)};
+	std::string errorMsg = "positiveHorizontal";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -304,14 +315,14 @@ bool positiveHorizontal() {
  * Calls getcells() with a negative horizontal slope.
  */
 bool negativeHorizontal() {
-	pair<int,int> origin = make_pair(5,1),
-				  target = make_pair(1,1);
-	set<pair<int,int>>  solution = {
-											make_pair(1,1),
-											make_pair(2,1),
-											make_pair(3,1),
-											make_pair(4,1)};
-	string errorMsg = "negativeHorizontal";
+	std::pair<int,int> origin = std::make_pair(5,1),
+				  target = std::make_pair(1,1);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(1,1),
+											std::make_pair(2,1),
+											std::make_pair(3,1),
+											std::make_pair(4,1)};
+	std::string errorMsg = "negativeHorizontal";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -319,14 +330,14 @@ bool negativeHorizontal() {
  * Calls getcells() with a positive vertical slope.
  */
 bool positiveVertical() {
-	pair<int,int> origin = make_pair(1,1),
-				  target = make_pair(1,5);
-	set<pair<int,int>>  solution = {
-											make_pair(1,2),
-											make_pair(1,3),
-											make_pair(1,4),
-											make_pair(1,5)};
-	string errorMsg = "positiveVertical";
+	std::pair<int,int> origin = std::make_pair(1,1),
+				  target = std::make_pair(1,5);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(1,2),
+											std::make_pair(1,3),
+											std::make_pair(1,4),
+											std::make_pair(1,5)};
+	std::string errorMsg = "positiveVertical";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -334,14 +345,14 @@ bool positiveVertical() {
  * Calls getcells() with a negative vertical slope.
  */
 bool negativeVertical() {
-	pair<int,int> origin = make_pair(1,5),
-			      target = make_pair(1,1);
-	set<pair<int,int>>  solution = {
-											make_pair(1,1),
-											make_pair(1,2),
-											make_pair(1,3),
-											make_pair(1,4)};
-	string errorMsg = "negativeVertical";
+	std::pair<int,int> origin = std::make_pair(1,5),
+			      target = std::make_pair(1,1);
+	std::set<std::pair<int,int>>  solution = {
+											std::make_pair(1,1),
+											std::make_pair(1,2),
+											std::make_pair(1,3),
+											std::make_pair(1,4)};
+	std::string errorMsg = "negativeVertical";
 	return testGetCells(&origin, &target, &solution, errorMsg);
 }
 
@@ -349,14 +360,14 @@ bool negativeVertical() {
  * Calls getcells() with duplicate points.
  */
 bool duplicatePoint() {
-	pair<int,int> origin = make_pair(1,1),
-				  target = make_pair(1,1);
-	vector<pair<int,int>> pairs = getCells(&origin, &target);
+	std::pair<int,int> origin = std::make_pair(1,1),
+				  target = std::make_pair(1,1);
+	std::vector<std::pair<int,int>> pairs = getCells(&origin, &target);
 	if (pairs.size()==0) {
 		return true;
 	}
-	cout<< "ERROR in duplicatePoint.\n";
-	cout<<"Expected: size 0.\n";
-	cout<<"Recieved: size "<<pairs.size()<<".\n";
+	std::cout<< "ERROR in duplicatePoint.\n";
+	std::cout<<"Expected: size 0.\n";
+	std::cout<<"Recieved: size "<<pairs.size()<<".\n";
 	return false;
 }

@@ -14,7 +14,6 @@
 #include "GlobalVars.h"
 #include "Grid.h"
 
-namespace std {
 /**
  * Computes the bivariate normal distribution as a probability density for a
  * given x,y pair.
@@ -82,26 +81,21 @@ double isNonPos(double x) {
  * @param behaviorGrid A pointer to a zero-initalized Grid object of the same
  *      size as the topographyGrid.
  */
-void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
+void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
+                          int cellSize, double ousdx, double ousdy,
+                          double oucor, double mux, double muy,
+                          int fishmodel) {
     int rows = topographyGrid -> rows - 2 * border;
     int cols = topographyGrid -> cols - 2 * border;
-    int cellSize = stoi(acousticParams["cellSize"]);
-    double ousdx = stod(acousticParams["ousdx"]),
-           ousdy = stod(acousticParams["ousdy"]),
-           oucor = stod(acousticParams["oucor"]),
-           mux = stod(acousticParams["mux"]),
-              muy   = stod(acousticParams["muy"]);
-    double fishmodel = stod(acousticParams["fishmodel"]);
-
 
     if (fishmodel == 0) {  // RW
-        cout << "\nUsing RW model\n";
+        std::cout << "\nUsing RW model\n";
         Eigen::MatrixXd temp;
         temp.resize(rows, cols);
         temp.setOnes();
         behaviorGrid -> data.block(border, border, rows, cols) = temp;
     } else if (fishmodel == 1) {  // OU
-        cout << "\nUsing OU model\n";
+        std::cout << "\nUsing OU model\n";
         double varx = pow(ousdx, 2);
         double vary = pow(ousdy, 2);
         double covxy = oucor * ousdx * ousdy;
@@ -127,7 +121,6 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
         // 2d comma initializer shortcut fromEigen
         hrCov << vary, covxy, covxy, varx;
         double temp;
-        cout << "Allocating";
 
         for (double i = border; i < rows; i ++) {
             for (double j = border; j < cols; j ++) {
@@ -140,7 +133,7 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
     // Vertical Habitat Restrictions
     if (acousticParams.count("minDepth") > 0 &&
         acousticParams.count("maxDepth") > 0) {
-        cout << "Using Vertical Habitat Restrictions: \nminDepth: " <<
+        std::cout << "Using Vertical Habitat Restrictions: \nminDepth: " <<
                 acousticParams["minDepth"] << "m\nmaxDepth: " <<
                 acousticParams["maxDepth"] << "m\n";
         Grid* minGrid = new Grid(rows, cols, "min");
@@ -151,12 +144,12 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
         minGrid -> data = topographyGrid -> data.block(border,
                 border, rows, cols).array() + stod(acousticParams["minDepth"]);
         // Any non-positive values are valid, store a 1 there
-        minGrid -> data = minGrid -> data.unaryExpr(ptr_fun(isNonPos));
+        minGrid -> data = minGrid -> data.unaryExpr(std::ptr_fun(isNonPos));
         // Add the maxDepth to the topographyGrid (again, a copy)
         maxGrid -> data = topographyGrid -> data.block(border, border, rows,
                 cols).array() + stod(acousticParams["maxDepth"]);
         // Any non-negative values are valid, store a 1
-        maxGrid -> data = maxGrid -> data.unaryExpr(ptr_fun(isNonNeg));
+        maxGrid -> data = maxGrid -> data.unaryExpr(std::ptr_fun(isNonNeg));
         // Multiply the two zero-one matrices to get cells with values between
         //  the min and max depths
         temp->data = minGrid -> data.cwiseProduct(maxGrid -> data);
@@ -169,4 +162,3 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid) {
     double sum = behaviorGrid -> data.sum();
     behaviorGrid -> data = behaviorGrid -> data / sum;
 }
-}  // namespace std

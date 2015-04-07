@@ -7,12 +7,13 @@
 //============================================================================
 #ifndef SRC_GLOBALVARS_H_
 #define SRC_GLOBALVARS_H_
-#pragma once
+#include <set>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 #define EIGEN_DEFAULT_TO_ROW_MAJOR true
-namespace std {
-extern unordered_map <string, string> acousticParams;
+
+extern std::unordered_map <std::string, std::string> acousticParams;
 extern int border;
-}  // namespace std
 #endif  // SRC_GLOBALVARS_H_

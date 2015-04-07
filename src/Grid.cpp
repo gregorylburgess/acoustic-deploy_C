@@ -9,7 +9,6 @@
 #include <netcdf.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <Dense>
 #include <Core>
 #include <cmath>
@@ -19,7 +18,6 @@
 #include <vector>
 #include "Grid.h"
 
-namespace std {
 /**
  * Default constructor.
  */
@@ -36,7 +34,7 @@ Grid::Grid() {
  * @param Cols The number of columns the Grid should have.
  * @param name The name of the Grid.  Used when writing files.
  */
-Grid::Grid(int Rows, int Cols, string Name) {
+Grid::Grid(int Rows, int Cols, std::string Name) {
     rows = Rows;
     cols = Cols;
     data.resize(Rows, Cols);
@@ -49,7 +47,7 @@ Grid::Grid(int Rows, int Cols, string Name) {
  * @param mat A pointer to the Grid to copy.
  * @param newName The name of the newly created Grid.  Used when writing files.
  */
-Grid::Grid(Grid* mat, string newName) {
+Grid::Grid(Grid* mat, std::string newName) {
     Grid matrix = *mat;
     rows = matrix.rows;
     cols = matrix.cols;
@@ -63,7 +61,7 @@ Grid::Grid(Grid* mat, string newName) {
  * @param dat An existing eigen matrix.
  * @param newName The name of the newly created Grid.  Used when writing files.
  */
-Grid::Grid(Eigen::MatrixXd dat, string newName) {
+Grid::Grid(Eigen::MatrixXd dat, std::string newName) {
     rows = dat.rows();
     cols = dat.cols();
     name = newName;
@@ -90,7 +88,9 @@ double nanCheck(double x) {
  * operator.
  */
 void Grid::clearNA() {
-    double (*nanCheck)(double);
+    // TODO This wasn't always initialized to zero.  But it fixed a warning.
+    // make sure this doesn't do anything weird...
+    double (*nanCheck)(double) = 0;
     data.unaryExpr(nanCheck);
 }
 
@@ -102,9 +102,9 @@ void Grid::printData() {
     std::cout << std::fixed;
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            cout <<data(i, j) << "\t";
+            std::cout <<data(i, j) << "\t";
         }
-        cout << "\n";
+        std::cout << "\n";
     }
 }
 
@@ -134,4 +134,3 @@ void Grid::setAll(double val) {
         }
     }
 }
-}  // namespace std

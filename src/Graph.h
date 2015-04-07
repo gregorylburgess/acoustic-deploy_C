@@ -10,7 +10,8 @@
 #pragma once
 #include <string>
 #include <vector>
-namespace std {
+#include "GlobalVars.h"
+
 class Graph {
  public:
     bool contour;
@@ -27,11 +28,10 @@ class Graph {
     std::string contourDataFile;
     Grid* grid;
     explicit Graph(Grid* g);
-    void printContour(vector<double> *contourLevels);
+    void printContour(std::vector<double> *contourLevels);
     void  printContourGraph(int width, int height,
-             vector<double> *contourLevels, bool logScaleGraphColoring);
+             std::vector<double> *contourLevels, bool logScaleGraphColoring);
     void writeDat();
     void writeMat();
 };
-}  // namespace std
 #endif  // SRC_GRAPH_H_

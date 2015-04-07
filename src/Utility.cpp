@@ -16,19 +16,19 @@
 #include <utility>
 #include <vector>
 #include "Utility.h"
+#include "GlobalVars.h"
 
-namespace std {
 /**
  * Mechanism for uniform error reporting.
  * @param msg The error message to output.
  * @param errcode The error code to output.
  * @param timestamp The timestamp to output.
  */
-void printError(string msg, int errcode, string timestamp) {
+void printError(std::string msg, int errcode, std::string timestamp) {
     if (errcode) {
-        cout << msg << " \nError Code: " << errcode  << "\n";
+        std::cout << msg << " \nError Code: " << errcode  << "\n";
     } else {
-        cout << msg << " \n";
+        std::cout << msg << " \n";
     }
     exit(EXIT_FAILURE);
 }
@@ -55,8 +55,8 @@ double* seq(double start, double end, int size) {
  * @param filename A relative path to the file in question.
  * @return True if the file exists, false otherwise.
  */
-bool fexists(string filename) {
-    ifstream ifile(filename.c_str());
+bool fexists(std::string filename) {
+    std::ifstream ifile(filename.c_str());
     return ifile;
 }
 
@@ -64,12 +64,11 @@ bool fexists(string filename) {
  * Prints a set of pairs to console.
  * @param pairs A pointer to a set of pairs.
  */
-void printSet(set<pair<int, int>> *pairs) {
-    for (set<pair<int, int>>::iterator it = pairs->begin();
+void printSet(std::set<std::pair<int, int>> *pairs) {
+    for (std::set<std::pair<int, int>>::iterator it = pairs->begin();
                                 it != pairs->end(); ++it) {
-        pair<int, int>  i = *it;
-        cout << "(" << i.first << "," << i.second << ")\n";
+        std::pair<int, int>  i = *it;
+        std::cout << "(" << i.first << "," << i.second << ")\n";
     }
-    cout << "\n";
+    std::cout << "\n";
 }
-}  // namespace std

@@ -8,7 +8,5 @@
 #include "GlobalVars.h"
 #include <unordered_map>
 #include <string>
-namespace std {
-unordered_map <string, string> acousticParams = {};
+std::unordered_map <std::string, std::string> acousticParams = {};
 int border = 0;
-}  // namespace std

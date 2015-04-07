@@ -14,14 +14,12 @@
 #include <fstream>
 #include <cmath>
 #include <iostream>
-#include <string>
 #include <vector>
 #include "Grid.h"
 #include "Utility.h"
 #include "GlobalVars.h"
 #define _USE_MATH_DEFINES
 
-namespace std {
 /**
  * Checks if x is positive, returning 1 if it is, and x otherwise.
  * @param x The value to inspect.
@@ -35,29 +33,29 @@ double zero(double x) {
 }
 
 /**
- * A helper function that populates a vector of strings by splitting a string
+ * A helper function that populates a std::vector of std::strings by splitting a std::string
  * on a delimiter.
- * @param s A pointer to the string to split.
+ * @param s A pointer to the std::string to split.
  * @param delim A delimiting character.
- * @param elems A pointer to an empty vector of strings.
+ * @param elems A pointer to an empty std::vector of std::strings.
  */
-void splitVec(string *s, char delim,
-              vector<string> *elems) {
-    stringstream ss(*s);
-    string item;
+void splitVec(std::string *s, char delim,
+              std::vector<std::string> *elems) {
+    std::stringstream ss(*s);
+    std::string item;
     while (getline(ss, item, delim)) {
         elems->push_back(item);
     }
 }
 
 /**
- * Splits a string based on a delimiting character.
- * @param s A pointer to the string to split.
+ * Splits a std::string based on a delimiting character.
+ * @param s A pointer to the std::string to split.
  * @param delim A delimiting character.
- * @return a vector of strings containing the substrings between delimiters.
+ * @return a std::vector of std::strings containing the substd::strings between delimiters.
  */
-vector<string> split(string *s, char delim) {
-    vector<string> elems;
+std::vector<std::string> split(std::string *s, char delim) {
+    std::vector<std::string> elems;
     splitVec(s, delim, &elems);
     return elems;
 }
@@ -95,7 +93,7 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
     topographyGrid->data.block(border, border, numRows, numCols) =
                               temp.block(0, 0, numRows, numCols);
     // Ignore positive values.
-    topographyGrid->data = topographyGrid->data.unaryExpr(ptr_fun(zero));
+    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(zero));
     topographyGrid->clearNA();
 }
 
@@ -115,9 +113,9 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
  *      to the name of the series you wish to use.
  * @param timestamp A timestamp value used for error reporting.
  */
-void getBathy(Grid* topographyGrid, string inputFile, string inputFileType,
+void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFileType,
               size_t startRow, size_t startCol, size_t numRows, size_t numCols,
-              string seriesName, string timestamp) {
+              std::string seriesName, std::string timestamp) {
     // This will be the netCDF ID for the file and data variable.
     Eigen::MatrixXd temp;
     int ncid, varid, retval = -100;
@@ -161,7 +159,7 @@ void getBathy(Grid* topographyGrid, string inputFile, string inputFileType,
     } else if (inputFileType.compare("asc") == 0) {
         // ASC
         temp.resize(numRows, numCols);
-        ifstream input(inputFile);
+        std::ifstream input(inputFile);
         int null = 0;
         size_t numHeaderLines = 5,
                rowsLine = 1,
@@ -174,8 +172,8 @@ void getBathy(Grid* topographyGrid, string inputFile, string inputFileType,
                endRowIndex = startRowIndex+numRows,
                i = 0,
                j = 0;
-        string line = "";
-        vector<string> vLine;
+        std::string line = "";
+        std::vector<std::string> vLine;
         if (input.is_open()) {
             for (cursor = 0; cursor < endRowIndex; cursor ++) {
                 getline(input, line);
@@ -184,37 +182,37 @@ void getBathy(Grid* topographyGrid, string inputFile, string inputFileType,
                     // Get the number of columns in the file
                     if (cursor == colsLine) {
                         vLine = split(&line, ' ');
-                        cout << "\ncolsLine=" << vLine[vLine.size()-1];
+                        std::cout << "\ncolsLine=" << vLine[vLine.size()-1];
                         cols = stoi(vLine[vLine.size() - 1]);
 
                         if (cols < startCol + numCols) {
-                            cout << "\nERROR, requested bathymetry grid" <<
+                            std::cout << "\nERROR, requested bathymetry grid" <<
                                     "column coordinates are out of bounds.\n";
                             exit(1);
                         }
                     } else if (cursor == rowsLine) {
                         // Get the number of rows in the file.
                         vLine = split(&line, ' ');
-                        cout << "rowsLine=" << vLine[vLine.size() - 1];
+                        std::cout << "rowsLine=" << vLine[vLine.size() - 1];
                         rows = stoi(vLine[vLine.size() - 1]);
 
                         if (rows < startRow + numRows) {
-                            cout << "\nERROR, requested bathymetry grid row" <<
+                            std::cout << "\nERROR, requested bathymetry grid row" <<
                                     " coordinates are out of bounds.\n";
                             exit(1);
                         }
                     } else if (cursor == nullLine) {
                         // Get the null value substitute
                         vLine = split(&line, ' ');
-                        cout << "nullLine=" << vLine[vLine.size() - 1];
+                        std::cout << "nullLine=" << vLine[vLine.size() - 1];
                         null = stoi(vLine[vLine.size() - 1]);
                     }
                 } else if (cursor >= startRowIndex) {
                     vLine = split(&line, ' ');
                     for (i = startCol; i < startCol + numCols; i ++) {
-                        // cout<<"accessing temp("<<cursor-startRowIndex-1<<","
+                        // std::cout<<"accessing temp("<<cursor-startRowIndex-1<<","
                         // <<i-startCol<<")\n";
-                        // cout<<"Cursor:"<<cursor<<"   SRI:"<<startRowIndex<<
+                        // std::cout<<"Cursor:"<<cursor<<"   SRI:"<<startRowIndex<<
                         // "\n";
                         temp(cursor - startRowIndex, i - startCol) =
                                 stod(vLine[i]);
@@ -234,24 +232,23 @@ void getBathy(Grid* topographyGrid, string inputFile, string inputFileType,
             topographyGrid->data.block(border, border, numRows, numCols) =
                             temp.block(0, 0, numRows, numCols);
         } else {
-            cout << "\nUnable to open bathymetry file.\n";
+            std::cout << "\nUnable to open bathymetry file.\n";
         }
     } else {
         // Invalid filetype
-        cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
+        std::cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
         simulatetopographyGrid(topographyGrid, static_cast<int>(numRows),
                                static_cast<int>(numCols));
     }
     topographyGrid->clearNA();
-    topographyGrid->data = topographyGrid->data.unaryExpr(ptr_fun(zero));
+    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(zero));
     if (acousticParams["debug"] == "1") {
         // topographyGrid->printData();
-        cout << "startx " << startCol << "\nXDist: "<< numCols <<
+        std::cout << "startx " << startCol << "\nXDist: "<< numCols <<
                   "\nstartY:  "<< startRow << "\nYDist: " << numRows << "\n";
-        cout << "inputFileType: " << inputFileType << "\ninputFile: " <<
+        std::cout << "inputFileType: " << inputFileType << "\ninputFile: " <<
                   inputFile << "\nseriesName: " << seriesName << "\n";
-        cout << "retval: " << retval << "\n" << "ncid: " << ncid << "\n\n";
+        std::cout << "retval: " << retval << "\n" << "ncid: " << ncid << "\n\n";
     }
-    cout << "Exiting bathy";
+    std::cout << "Exiting bathy";
 }
-}  // namespace std

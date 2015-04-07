@@ -12,15 +12,14 @@
 #include <vector>
 #include "Grid.h"
 #include "Utility.h"
-#include "gnuplot_i.hpp"
 #include "Graph.h"
 #include "GlobalVars.h"
+#include "gnuplot_i.hpp"
 
-namespace std {
 /** Graph Constructor.  Creates a Graph object from a Grid object.
  *  @param Grid* g A pointer to a Grid object.
  */
-Graph::Graph(Grid* g){
+Graph::Graph(Grid* g) {
     contour = false;
     grid = g;
     contourDataFile = "data/contour.dat";
@@ -36,11 +35,11 @@ Graph::Graph(Grid* g){
  * @param contourLevels A pointer to an array of doubles holding contour
  *          levels (depth as a negative integer).
  */
-void Graph::printContour(vector <double> *contourLevels) {
-    cout << "\n\nWriting contour file...\n";
+void Graph::printContour(std::vector <double> *contourLevels) {
+    std::cout << "\n\nWriting contour file...\n";
     Gnuplot plots;
-    stringstream ss;
-    string setOutput  = "set table \"" + contourDataFile + "\"",
+    std::stringstream ss;
+    std::string setOutput  = "set table \"" + contourDataFile + "\"",
            setContour = "set contour surface",
            cntrparam,
            noSurface = "unset surface",
@@ -69,12 +68,12 @@ void Graph::printContour(vector <double> *contourLevels) {
     ss << "splot \"" << inputDatFile << "\"";
     plot = ss.str();
     if (acousticParams["debug"] ==  "1") {
-        cout << setOutput << "\n";
-        cout << setContour << "\n";
-        cout << cntrparam << "\n";
-        cout << noSurface << "\n";
-        cout << pm3d << "\n";
-        cout << plot << "\n";
+        std::cout << setOutput << "\n";
+        std::cout << setContour << "\n";
+        std::cout << cntrparam << "\n";
+        std::cout << noSurface << "\n";
+        std::cout << pm3d << "\n";
+        std::cout << plot << "\n";
     }
     plots.cmd(plot);
 }
@@ -92,46 +91,46 @@ void Graph::printContour(vector <double> *contourLevels) {
  *                scale, otherwise a linear scale is used.
  */
 void  Graph::printContourGraph(int width, int height,
-                                vector <double> *contourLevels,
+                                std::vector <double> *contourLevels,
                                 bool logScaleGraphColoring) {
-    cout << "\n\nPrinting " << grid->name << " graph...\n";
+    std::cout << "\n\nPrinting " << grid->name << " graph...\n";
     int i = 0, numOfLevels = stoi(acousticParams["numContourDepths"]);
     double  xstart = -.5,
             ystart = -.5;
-    stringstream ss;
-    string  filetype = ".gif",
+    std::stringstream ss;
+    std::string  filetype = ".gif",
             outfile = "img/" + grid->name + filetype,
             setOuput = "set output \'" + outfile + "\';",
             // setScale = "set logscale cb;",
             setScale = "set autoscale y",
-            setCBRange = "set cbrange[" + to_string(grid->data.minCoeff()) +
-                           ":" + to_string(grid->data.maxCoeff()) + "];",
+            setCBRange = "set cbrange[" + std::to_string(grid->data.minCoeff()) +
+                           ":" + std::to_string(grid->data.maxCoeff()) + "];",
             sensorLabelColor = "white",
             setLegendColor = "set key textcolor rgb \"#00aa00\"",
             setLegendFont = "set key font \",12\"",
             sensorIconColor = "blue",
             xrange,
             yrange,
-            size = "set terminal gif size " + to_string(width) + "," +
-                     to_string(height) + ";",
+            size = "set terminal gif size " + std::to_string(width) + "," +
+                     std::to_string(height) + ";",
             plotData,
             pallete;
 
     if (acousticParams["debug"] ==  "1") {
-        cout << "Output File: " << outfile << "\n";
-        cout << "Data File: " << inputDatFile << "\n";
-        cout << "Matrix File: " << inputMatFile << "\n";
-        cout << setScale << "\n";
-        cout << setCBRange << "\n";
+        std::cout << "Output File: " << outfile << "\n";
+        std::cout << "Data File: " << inputDatFile << "\n";
+        std::cout << "Matrix File: " << inputMatFile << "\n";
+        std::cout << setScale << "\n";
+        std::cout << setCBRange << "\n";
     }
 
     if (!fexists(inputDatFile)) {
-        cout << "Input .dat File not Found!\n";
+        std::cout << "Input .dat File not Found!\n";
         throw 1;
     }
 
     if (!fexists(inputMatFile)) {
-        cout << "Input .mat File not Found!\n";
+        std::cout << "Input .mat File not Found!\n";
         throw 1;
     }
     // Set y-axis scale type & min/max values
@@ -188,36 +187,35 @@ void  Graph::printContourGraph(int width, int height,
     plotData = ss.str();
     ss.str("");
     ss.clear();
-
-    try {
-        Gnuplot plots;
-        plots.cmd(setOuput);
-        plots.cmd(size);
-        plots.cmd("set term gif small;");
-        plots.cmd("set style line 1 lt 1 lw 1;");
-        plots.cmd(setLegendColor);
-        plots.cmd(setLegendFont);
-        if (logScaleGraphColoring) {
-            plots.cmd("set log cb;");
+        try {
+            Gnuplot plots;
+            plots.cmd(setOuput);
+            plots.cmd(size);
+            plots.cmd("set term gif small;");
+            plots.cmd("set style line 1 lt 1 lw 1;");
+            plots.cmd(setLegendColor);
+            plots.cmd(setLegendFont);
+            if (logScaleGraphColoring) {
+                plots.cmd("set log cb;");
+            }
+            plots.cmd(xrange);
+            plots.cmd(yrange);
+            // plots.cmd(size);
+            if (acousticParams["debug"] ==  "1") {
+                std::cout << setOuput << "\n";
+                std::cout << "set terminal gif;\n";
+                std::cout << xrange << "\n";
+                std::cout << yrange << "\n";
+                std::cout << size << "\n";
+                std::cout << pallete << "\n";
+                std::cout << plotData << "\n";
+            }
+            plots.cmd(plotData);
+            std::cout  << "Finished writing graph data files" << "\n";
         }
-        plots.cmd(xrange);
-        plots.cmd(yrange);
-        // plots.cmd(size);
-        if (acousticParams["debug"] ==  "1") {
-            cout << setOuput << "\n";
-            cout << "set terminal gif;\n";
-            cout << xrange << "\n";
-            cout << yrange << "\n";
-            cout << size << "\n";
-            cout << pallete << "\n";
-            cout << plotData << "\n";
+        catch (GnuplotException &ge) {
+            std::cout << ge.what() << std::endl;
         }
-        plots.cmd(plotData);
-        cout  << "Finished writing graph data files" << "\n";
-    }
-    catch (GnuplotException &ge) {
-        cout << ge.what() << endl;
-    }
 }
 
 /**
@@ -225,10 +223,10 @@ void  Graph::printContourGraph(int width, int height,
  * separated by whitespace.
  */
 void Graph::writeMat() {
-    ofstream out;
+    std::ofstream out;
     int rows = grid->rows - 2 * border,
         cols = grid->cols - 2 * border;
-    cout  << "writing " <<  rows << ","  << cols << " r,c";
+    std::cout  << "writing " <<  rows << ","  << cols << " r,c";
     out.open(("data/" + grid->name + ".mat").c_str());
     out << grid->data.block(border, border, rows, cols);
     out.close();
@@ -239,7 +237,7 @@ void Graph::writeMat() {
  * points delimited by newlines.
  */
 void Graph::writeDat() {
-    ofstream out;
+    std::ofstream out;
     int i = 0;
     int j = 0;
     int rows = grid->rows - 2 * border;
@@ -253,7 +251,7 @@ void Graph::writeDat() {
         for (j = border; j < cols; j++) {
             val = temp(i, j);
             // Yes this is backwards.  No it's not an error.  THANKS GPUPlot...
-            out << setprecision(3) << j-border << " " << i-border << " " <<
+            out << std::setprecision(3) << j-border << " " << i-border << " " <<
                     val << "\r\n";
         }
         out << "\r\n";
@@ -261,4 +259,3 @@ void Graph::writeDat() {
 
     out.close();
 }
-}  // namespace std

@@ -19,7 +19,6 @@
 #include "Grid.h"
 #include "Utility.h"
 
-namespace std {
 /**
  * Helper class used for sorting pairs.
  */
@@ -35,21 +34,21 @@ class sortByDist {
 
     /**
      * Returns the distance between the given point and this point.
-     * @param pair<int, int> point The point to compare to the defiend point.
+     * @param std::pair<int, int> point The point to compare to the defiend point.
      * @return The distance between the stored point and the given point.
      */
-    double distDelta(pair<int, int> point) {
+    double distDelta(std::pair<int, int> point) {
         return sqrt(pow(r-(point.first), 2)+pow(c-(point.second), 2));
     }
 
     /**
      * Overloading the () operator to sort points by their distance from
      * the stored point.
-     * @param pair<int, int> lhs The first point in the comparison.
-     * @param pair<int, int> rhs The second point in the comparison.
+     * @param std::pair<int, int> lhs The first point in the comparison.
+     * @param std::pair<int, int> rhs The second point in the comparison.
      * @return True if lhs is closer than rhs, false otherwise.
      */
-    bool operator() (pair<int, int> lhs, pair<int, int> rhs) {
+    bool operator() (std::pair<int, int> lhs, std::pair<int, int> rhs) {
         return distDelta(lhs)  <  distDelta(rhs);
     }
 };
@@ -232,7 +231,7 @@ void goodFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
     double endRow = rows-border;
 
     for (int r = border; r < rows-border; r++) {
-        cout  <<  (r + 1) / endRow  <<  "\n";
+        std::cout  <<  (r + 1) / endRow  <<  "\n";
         rstart = r-range;
         for (int c = border; c < cols-border; c++) {
             cstart = c-range;
@@ -291,14 +290,14 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
 
     for (int r = border; r < rows-border; r++) {
         // out << "\n" << r;
-        cout  <<  (r + 1) / endRow  <<  "\n";
+        std::cout  <<  (r + 1) / endRow  <<  "\n";
         for (int c = border; c < cols-border; c++) {
             // compute the visibility grid for each cell
             calcVizGrid(topographyGrid, distanceGradient, &visibilityGrid,
                         &localTopography, &temp, r, c, range);
             // invalidate cells above the surface
             visibilityGrid = visibilityGrid.
-                    unaryExpr(ptr_fun(restrictMaxVizDepth));
+                    unaryExpr(std::ptr_fun(restrictMaxVizDepth));
             // compute {probability of detection due to range}*
             //   {visible depth}/{actual depth}
             temp = (visibilityGrid.cwiseQuotient(localTopography)).
@@ -308,7 +307,7 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
             //  (which is 0)).
             if (c < lowerBorderRange || r < lowerBorderRange ||
                      r > upperRowRng || c > upperColRng) {
-                temp = temp.unaryExpr(ptr_fun(validate));
+                temp = temp.unaryExpr(std::ptr_fun(validate));
             }
             // sum the resulting goodness
             goodnessGrid->data(r, c) = temp.sum();
@@ -370,9 +369,9 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
         mean = stod(acousticParams["meanRelativePosition"]);
         sd = stod(acousticParams["RelativePositionSD"]);
     }
-    cout  <<  "mean:"  <<  mean  <<  "\nsd:"  <<  sd  <<  "\n";
+    std::cout  <<  "mean:"  <<  mean  <<  "\nsd:"  <<  sd  <<  "\n";
 
-    cout  <<  "useRelativeBehaviorModel = "  <<  useRelativeBehaviorModel  <<
+    std::cout  <<  "useRelativeBehaviorModel = "  <<  useRelativeBehaviorModel  <<
               "\n";
     // declare and initialize matrices
     Eigen::MatrixXd visibilityMatrix;
@@ -387,7 +386,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
     fishVisibility.setConstant(0);
 
     for (int r = border; r < rows-border; r++) {
-        cout  <<  (r + 1) / endRow  <<  "\n";
+        std::cout  <<  (r + 1) / endRow  <<  "\n";
         // out  <<  "\n"  <<  r;
         for (int c = border; c < cols-border; c++) {
             // compute the visibility grid for each cell
@@ -395,7 +394,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                         &localTopography, &temp, r, c, range);
             // invalidate cells above the surface
             visibilityMatrix = visibilityMatrix.
-                            unaryExpr(ptr_fun(restrictMaxVizDepth));
+                            unaryExpr(std::ptr_fun(restrictMaxVizDepth));
             localBehavior = behaviorGrid->data.
                             block(r-sensorRange, c-sensorRange, size, size);
             // Compute the visible percentage of fish in the water column of
@@ -403,7 +402,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
 
             // Linear distribution model
             fishVisibility = visibilityMatrix.cwiseQuotient(localTopography);
-            fishVisibility.unaryExpr(ptr_fun(validate));
+            fishVisibility.unaryExpr(std::ptr_fun(validate));
 
 
             // Normal distribution model
@@ -419,7 +418,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                             // compute total available fish
                             totalFish = cdistPartition(mean, sd, 1, 0);
 
-                            // cout  <<  "cdistPartition(" << mean <<
+                            // std::cout  <<  "cdistPartition(" << mean <<
                             //   ", " << sd << ", "  <<
                             //   localBehavior(i, j) << ", " << 0 <<
                             //   ") = " << totalFish;
@@ -428,14 +427,14 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                                           fishVisibility(i, j), 0);
                             // compute visible/total
                             fishVisibility(i, j) = visibleFish / totalFish;
-                            // cout  <<  visibleFish  <<  "/"  <<
+                            // std::cout  <<  visibleFish  <<  "/"  <<
                             //   totalFish  <<  " = "   <<
                             //   visibleFish/totalFish  <<  "\n";
                         }
                     }
                 }
                 // revalidate in case we divided by zero again...
-                fishVisibility.unaryExpr(ptr_fun(validate));
+                fishVisibility.unaryExpr(std::ptr_fun(validate));
             }
             // compute {probability of detection due to range} * {visible fish}
             temp = (*detectionGradient).cwiseProduct(fishVisibility).
@@ -445,7 +444,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
             // by the depth of a border cell (which is 0)).
             if (c < lowerBorderRange  ||  r < lowerBorderRange  ||
                     r > upperRowRng || c > upperColRng) {
-                temp = temp.unaryExpr(ptr_fun(validate));
+                temp = temp.unaryExpr(std::ptr_fun(validate));
             }
 
             // sum the resulting goodness
@@ -463,8 +462,8 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
  * coordinates to offset.
  * @return A new, offset point.
  */
-pair<int, int> offset(const pair<int, int> *point) {
-    pair<int, int> newPoint = make_pair(point->first + .5, point->second + .5);
+std::pair<int, int> offset(const std::pair<int, int> *point) {
+    std::pair<int, int> newPoint = std::make_pair(point->first + .5, point->second + .5);
     return newPoint;
 }
 
@@ -476,9 +475,9 @@ pair<int, int> offset(const pair<int, int> *point) {
  * @return A vector containing Pairs that intersect a line drawn between the
  *      two points.
  */
-vector < pair<int, int>> getCells(const pair  < int, int> *origin,
-                               const pair  < int, int> *target) {
-    set < pair<int, int> > pairs;
+std::vector<std::pair<int, int>> getCells(const std::pair<int, int> *origin,
+                               const std::pair<int, int> *target) {
+    std::set<std::pair<int, int>> pairs;
     // Calculate the slope
     int ox = origin->first,
         oy = origin->second,
@@ -500,12 +499,12 @@ vector < pair<int, int>> getCells(const pair  < int, int> *origin,
         }
         double absm = abs(m);
         // assume the sensor is in the middle of the cell
-        pair<int, int> offsetO = offset(origin);
+        std::pair<int, int> offsetO = offset(origin);
         double b = offsetO.second - m * offsetO.first;
-        int lowerX = min(ox, tx);
-        int upperX = max(ox, tx);
-        int lowerY = min(oy, ty);
-        int upperY = max(oy, ty);
+        int lowerX = std::min(ox, tx);
+        int upperX = std::max(ox, tx);
+        int lowerY = std::min(oy, ty);
+        int upperY = std::max(oy, ty);
         int startX = lowerX, endX = upperX;
         int startY = lowerY, endY = upperY;
         int y = 0, y1 = 0;
@@ -516,25 +515,25 @@ vector < pair<int, int>> getCells(const pair  < int, int> *origin,
             for (y = startY + 1; y  <=  endY; y ++) {
                 x = (y - b) / m;
                 x1 = floor(x);
-                // cout  << "Y: " << y  << ", X: " << x << "; added(" << x1 <<
+                // std::cout  << "Y: " << y  << ", X: " << x << "; added(" << x1 <<
                 //   ", " << y-1 << ")
                 //  and (" << x1 << ", " << y << ")\n";
-                pairs.insert(make_pair(x1, y-1));
-                pairs.insert(make_pair(x1, y));
+                pairs.insert(std::make_pair(x1, y-1));
+                pairs.insert(std::make_pair(x1, y));
             }
         } else if (absm  <  1) {  // Slow Slopes
             for (x = startX + 1; x  <=  endX; x ++) {
                 y = m * x + b;
                 y1 = floor(y);
-                pairs.insert(make_pair(x - 1, y1));
-                pairs.insert(make_pair(x, y1));
+                pairs.insert(std::make_pair(x - 1, y1));
+                pairs.insert(std::make_pair(x, y1));
             }
         } else {  // Slope ==  1
             startX = lowerX;
             endX = upperX;
             for (x = startX; x  <=  endX; x++) {
                 y = m * x + b;
-                pairs.insert(make_pair(x, y));
+                pairs.insert(std::make_pair(x, y));
             }
         }
         if (pairs.size() > 0) {
@@ -545,15 +544,15 @@ vector < pair<int, int>> getCells(const pair  < int, int> *origin,
         pairs.erase(*origin);
 
         // copy to vector
-        vector <pair< int, int>> vpairs(pairs.begin(), pairs.end());
+        std::vector<std::pair< int, int>> vpairs(pairs.begin(), pairs.end());
         // Sort pairs by distance from origin
         sortByDist sorter(origin->first, origin->second);
         sort(vpairs.begin(), vpairs.end(), sorter);
-        // cout  <<   "Returning vector of size "  <<  vpairs.size()  <<  "\n";
+        // std::cout  <<   "Returning vector of size "  <<  vpairs.size()  <<  "\n";
 
         return vpairs;
     } else {
-        vector < pair<int, int>> vpairs;
+        std::vector< std::pair<int, int>> vpairs;
         return vpairs;
     }
 }
@@ -573,7 +572,7 @@ void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
     // Vectors from -rng to rng, of length size
     Eigen::VectorXd refx = refx.LinSpaced(size, -rng, rng);
     Eigen::VectorXd refy = refy.LinSpaced(size, -rng, rng);
-    vector < pair<int, int>> cells;
+    std::vector< std::pair<int, int>> cells;
 
     Y = refy.replicate(1, size);
     X = refx.replicate(1, size);
@@ -610,8 +609,7 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
             (*detectionGradient)(r, c) = normalProb(
                                                 sensorPeakDetectionProbability,
                                                 SDofSensorDetectionRange,
-                                                (*distGradient)(r, c)
-                                                );
+                                                (*distGradient)(r, c));
         }
     }
 }
@@ -635,7 +633,7 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
 void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
         Eigen::MatrixXd* solutionGrid, Eigen::MatrixXd* localTopo,
         Eigen::MatrixXd* tempGrid, int row, int col, int sensorRange) {
-    // cout  <<  "\n[CalcVizGrid()]\n";
+    // std::cout  <<  "\n[CalcVizGrid()]\n";
     int i = 0, j = 0,
         // Compute row metadata
         startRow = row - sensorRange,
@@ -657,14 +655,14 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
     slopeGrid = tempGrid->cwiseQuotient(*distanceGradient);
     // slopeGrid now has the slope from all cells to the center
     // viz grid has depth deltas
-    set  < pair<int, int>> unprocessedCells;
-    vector < pair<int, int>> interveningCells;
-    pair<int, int> origin = make_pair(sensorRange, sensorRange);
+    std::set<std::pair<int, int>> unprocessedCells;
+    std::vector<std::pair<int, int>> interveningCells;
+    std::pair<int, int> origin = std::make_pair(sensorRange, sensorRange);
     double maxSlope = 0;
     // Add cells to process to a list.
     for (i = 0; i  <  sensorDiameter; i ++) {
         for (j = 0; j  <  sensorDiameter; j ++)
-            unprocessedCells.insert((const pair<int, int>) make_pair(i, j));
+            unprocessedCells.insert((const std::pair<int, int>) std::make_pair(i, j));
     }
     unprocessedCells.erase(origin);
     maxSlope = 0;
@@ -672,14 +670,14 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
         interveningCells = getCells(&origin, &*unprocessedCells.cbegin());
         if (interveningCells.size() > 0) {
             auto iterator = interveningCells.cbegin();
-            pair<int, int> it = *iterator;
+            std::pair<int, int> it = *iterator;
             i = it.first;
             j = it.second;
             maxSlope = slopeGrid(i, j);
             // Process each cell for LoS
             for (auto iterator = interveningCells.begin();
                       iterator != interveningCells.cend(); ++iterator) {
-                maxSlope = max(maxSlope, slopeGrid(iterator->first,
+                maxSlope = std::max(maxSlope, slopeGrid(iterator->first,
                                                    iterator->second));
                 (*tempGrid)(iterator->first, iterator->second) = maxSlope;
                 unprocessedCells.erase(*iterator);
@@ -694,4 +692,3 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
                     (*localTopo)(sensorRange, sensorRange);
     // solutionGrid now has the max visible depths from the origin cell.
 }
-}  // namespace std

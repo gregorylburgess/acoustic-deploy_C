@@ -13,14 +13,11 @@
 #include <vector>
 #include "Grid.h"
 #include "Utility.h"
-
-#pragma once
-namespace std {
 void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
                            Grid* goodnessGrid, int bias, int range,
                            double peak, double sd);
-vector<pair<int, int>> getCells(const pair <int, int> *origin,
-                                         const pair <int, int> *target);
+std::vector<std::pair<int, int>> getCells(const std::pair <int, int> *origin,
+                                         const std::pair <int, int> *target);
 void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
                  Eigen::MatrixXd* solutionGrid,
                  Eigen::MatrixXd* localTopo, Eigen::MatrixXd* temp, int rStart,
@@ -48,6 +45,5 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
                            double SDofSensorDetectionRange);
 void makeDistGradient(Eigen::MatrixXd* distGradient, int rng);
 double normalProb(double peak, double sd, double x);
-pair<int, int> offset(const pair<int, int> *point);
-}  // namespace std
+std::pair<int, int> offset(const std::pair<int, int> *point);
 #endif  // SRC_GOODNESS_H_
