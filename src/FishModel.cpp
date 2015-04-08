@@ -89,13 +89,17 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
     int cols = topographyGrid -> cols - 2 * border;
 
     if (fishmodel == 0) {  // RW
-        std::cout << "\nUsing RW model\n";
+        if (debug) {
+            std::cout << "\nUsing RW model\n";
+        }
         Eigen::MatrixXd temp;
         temp.resize(rows, cols);
         temp.setOnes();
         behaviorGrid -> data.block(border, border, rows, cols) = temp;
     } else if (fishmodel == 1) {  // OU
-        std::cout << "\nUsing OU model\n";
+        if (debug) {
+            std::cout << "\nUsing OU model\n";
+        }
         double varx = pow(ousdx, 2);
         double vary = pow(ousdy, 2);
         double covxy = oucor * ousdx * ousdy;
@@ -133,9 +137,11 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
     // Vertical Habitat Restrictions
     if (acousticParams.count("minDepth") > 0 &&
         acousticParams.count("maxDepth") > 0) {
-        std::cout << "Using Vertical Habitat Restrictions: \nminDepth: " <<
+        if (debug) {
+            std::cout << "Using Vertical Habitat Restrictions: \nminDepth: " <<
                 acousticParams["minDepth"] << "m\nmaxDepth: " <<
                 acousticParams["maxDepth"] << "m\n";
+        }
         Grid* minGrid = new Grid(rows, cols, "min");
         Grid* maxGrid = new Grid(rows, cols, "max");
         Grid* temp = new Grid(rows, cols, "temp");

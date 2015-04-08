@@ -88,8 +88,8 @@ double nanCheck(double x) {
  * operator.
  */
 void Grid::clearNA() {
-    // TODO This wasn't always initialized to zero.  But it fixed a warning.
-    // make sure this doesn't do anything weird...
+    // TODO(Greg) This wasn't always initialized to zero.  But it fixed a
+    // warning.  Make sure this doesn't do anything weird...
     double (*nanCheck)(double) = 0;
     data.unaryExpr(nanCheck);
 }
@@ -99,13 +99,7 @@ void Grid::clearNA() {
  * Prints the contents of the data array to the console.
  */
 void Grid::printData() {
-    std::cout << std::fixed;
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            std::cout <<data(i, j) << "\t";
-        }
-        std::cout << "\n";
-    }
+    std::cout << data;
 }
 
 /**

@@ -11,9 +11,10 @@
 #include <stdlib.h>
 #include <Core>
 #include <Dense>
-#include <fstream>
 #include <cmath>
+#include <fstream>
 #include <iostream>
+#include <string>
 #include <vector>
 #include "Grid.h"
 #include "Utility.h"
@@ -35,13 +36,13 @@ double zero(double x) {
 /**
  * A helper function that populates a std::vector of std::strings by splitting a std::string
  * on a delimiter.
- * @param s A pointer to the std::string to split.
+ * @param str A pointer to the std::string to split.
  * @param delim A delimiting character.
  * @param elems A pointer to an empty std::vector of std::strings.
  */
-void splitVec(std::string *s, char delim,
+void splitVec(std::string *str, char delim,
               std::vector<std::string> *elems) {
-    std::stringstream ss(*s);
+    std::stringstream ss(*str);
     std::string item;
     while (getline(ss, item, delim)) {
         elems->push_back(item);
@@ -50,13 +51,13 @@ void splitVec(std::string *s, char delim,
 
 /**
  * Splits a std::string based on a delimiting character.
- * @param s A pointer to the std::string to split.
+ * @param str A pointer to the std::string to split.
  * @param delim A delimiting character.
  * @return a std::vector of std::strings containing the substd::strings between delimiters.
  */
-std::vector<std::string> split(std::string *s, char delim) {
+std::vector<std::string> split(std::string *str, char delim) {
     std::vector<std::string> elems;
-    splitVec(s, delim, &elems);
+    splitVec(str, delim, &elems);
     return elems;
 }
 
@@ -113,9 +114,10 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
  *      to the name of the series you wish to use.
  * @param timestamp A timestamp value used for error reporting.
  */
-void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFileType,
-              size_t startRow, size_t startCol, size_t numRows, size_t numCols,
-              std::string seriesName, std::string timestamp) {
+void getBathy(Grid* topographyGrid, std::string inputFile,
+              std::string inputFileType, size_t startRow, size_t startCol,
+              size_t numRows, size_t numCols, std::string seriesName,
+              std::string timestamp) {
     // This will be the netCDF ID for the file and data variable.
     Eigen::MatrixXd temp;
     int ncid, varid, retval = -100;
@@ -142,7 +144,8 @@ void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFile
             // for whatever reason, this is in column, row order.
             static size_t start[] = {startRow, startCol};
             static size_t range[] = {numRows, numCols};
-            retval = nc_get_vara_double(ncid, varid, start, range, temp.data());
+            retval = nc_get_vara_double(ncid, varid, start, range,
+                                        temp.data());
             // TODO(Greg) Figure out a way to read data in row wise to avoid
             //             this transposition.
             topographyGrid->data.block(border, border, numRows, numCols) =
@@ -186,8 +189,9 @@ void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFile
                         cols = stoi(vLine[vLine.size() - 1]);
 
                         if (cols < startCol + numCols) {
-                            std::cout << "\nERROR, requested bathymetry grid" <<
-                                    "column coordinates are out of bounds.\n";
+                            std::cout << "\nERROR, requested bathymetry " <<
+                                    " grid column coordinates are out of" <<
+                                    " bounds.\n";
                             exit(1);
                         }
                     } else if (cursor == rowsLine) {
@@ -197,8 +201,9 @@ void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFile
                         rows = stoi(vLine[vLine.size() - 1]);
 
                         if (rows < startRow + numRows) {
-                            std::cout << "\nERROR, requested bathymetry grid row" <<
-                                    " coordinates are out of bounds.\n";
+                            std::cout << "\nERROR, requested bathymetry" <<
+                                    " grid row coordinates are out of" <<
+                                    " bounds.\n";
                             exit(1);
                         }
                     } else if (cursor == nullLine) {
@@ -210,10 +215,10 @@ void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFile
                 } else if (cursor >= startRowIndex) {
                     vLine = split(&line, ' ');
                     for (i = startCol; i < startCol + numCols; i ++) {
-                        // std::cout<<"accessing temp("<<cursor-startRowIndex-1<<","
-                        // <<i-startCol<<")\n";
-                        // std::cout<<"Cursor:"<<cursor<<"   SRI:"<<startRowIndex<<
-                        // "\n";
+                        // std::cout<<"accessing temp(" <<
+                        // cursor-startRowIndex-1 << "," <<i-startCol<<")\n";
+                        // std::cout<<"Cursor:"<<cursor<<"   SRI:" <<
+                        // startRowIndex << "\n";
                         temp(cursor - startRowIndex, i - startCol) =
                                 stod(vLine[i]);
                     }
@@ -236,7 +241,8 @@ void getBathy(Grid* topographyGrid, std::string inputFile, std::string inputFile
         }
     } else {
         // Invalid filetype
-        std::cout << "Bathymetry file type not supported.  Simulating Bathymetry.\n";
+        std::cout << "Bathymetry file type not supported.  Simulating" <<
+                     "Bathymetry.\n";
         simulatetopographyGrid(topographyGrid, static_cast<int>(numRows),
                                static_cast<int>(numCols));
     }

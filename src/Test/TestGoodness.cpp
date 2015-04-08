@@ -1,9 +1,11 @@
 #include <stdlib.h>
+#include <Dense>
 #include <iostream>
 #include <set>
 #include <string>
 #include "../Goodness.h"
 #include "../Bathy.h"
+#include "../FishModel.h"
 #include "TestGoodness.h"
 
 //Don't set this too low, as we'll get errors when using compiler
@@ -13,6 +15,7 @@ double tolerance = 0.0001;
  * Executes all tests in TestGoodness.cpp.  Returns true if all tests pass, false otherwise.
  */
 bool runGoodnessTests() {
+    debug = false;
 	bool success = (
 			duplicatePoint() &&
 			negativeHorizontal() &&
@@ -41,23 +44,112 @@ bool runGoodnessTests() {
 
 
 bool checkCalculateGoodness() {
-    /*  int numRows = 10,
-        numCols = 10,
+    int numRows = 5,
+        numCols = 5,
         range = 2,
-        i=0;
-    double peak = 1, sd = 1;
+        cellSize = 5,
+        fishmodel = 0,
+        bias = 0,
+        i = 0;
+    double peak = 1,
+           sd = 1,
+           ousdx = 0.9,
+           ousdy = 0.9,
+           oucor = 0,
+           mux = 1,
+           muy = 1;
+    bool result = true;
+    std::string methodID;
+
+    border = range;
     Grid bGrid(numRows + 2 * border, numCols + 2 * border, "Behavior");
     Grid gGrid(numRows + 2 * border, numCols + 2 * border, "Goodness");
     Grid tGrid(numRows + 2 * border, numCols + 2 * border, "Topography");
 
     simulatetopographyGrid(&tGrid, numRows, numCols);
 
-    for (i=0; i<3; i++) {
-       calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, i,
-                              range, peak, sd);
+    //allocate solution array
+    Eigen::MatrixXd sols[6];
+    for (i=0;i<6;i++) {
+        sols[i].resize(numRows+2*border,numCols+2*border);
     }
-*/
-    return true;
+    sols[0] << 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0.105625, 0.147885, 0.157314, 0.147885, 0.105625, 0, 0,
+    0, 0, 0.147885,  0.20486, 0.217573,  0.20486, 0.147885, 0, 0,
+    0, 0, 0.157314, 0.217573, 0.231018, 0.217573, 0.157314, 0, 0,
+    0, 0, 0.147885,  0.20486, 0.217573,  0.20486, 0.147885, 0, 0,
+    0, 0, 0.105625, 0.147885, 0.157314, 0.147885, 0.105625, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+
+    sols[1] << 0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0.305183,  0.382339,  0.278716,  0.138861, 0.0316823,  0,  0,
+    0,  0,  0.382339,  0.470825,  0.347304,  0.166804, 0.0394139,  0,  0,
+    0,  0,  0.278716,  0.347304,  0.256537, 0.12912, 0.0332236,  0,  0,
+    0,  0,  0.138861,  0.166804, 0.12912,  0.062904, 0.0206891,  0,  0,
+    0,  0, 0.0316823, 0.0394139, 0.0332236, 0.0206891,  0.010385,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0;
+
+
+    sols[2] << 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0.105625, 0.147885, 0.157314, 0.147885, 0.105625, 0, 0,
+    0, 0, 0.147885,  0.20486, 0.217573,  0.20486, 0.147885, 0, 0,
+    0, 0, 0.157314, 0.217573, 0.231018, 0.217573, 0.157314, 0, 0,
+    0, 0, 0.147885,  0.20486, 0.217573,  0.20486, 0.147885, 0, 0,
+    0, 0, 0.105625, 0.147885, 0.157314, 0.147885, 0.105625, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+
+    sols[3] << 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0.105625, 0.147885, 0.157314, 0.147885, 0.105625, 0, 0,
+    0, 0, 0.147885,  0.20486, 0.217573,  0.20486, 0.147885, 0, 0,
+    0, 0, 0.157314, 0.217573, 0.231018, 0.217573, 0.157314, 0, 0,
+    0, 0, 0.147885,  0.20486, 0.217573,  0.20486, 0.147885, 0, 0,
+    0, 0, 0.105625, 0.147885, 0.157314, 0.147885, 0.105625, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+
+    sols[4] << 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0.004225,  0.0059154, 0.00629257,  0.0059154, 0.004225, 0, 0,
+    0, 0,  0.0059154,  0.0081944, 0.00870291,  0.0081944,  0.0059154, 0, 0,
+    0, 0, 0.00629257, 0.00870291, 0.00924073, 0.00870291, 0.00629257, 0, 0,
+    0, 0,  0.0059154,  0.0081944, 0.00870291,  0.0081944,  0.0059154, 0, 0,
+    0, 0, 0.004225,  0.0059154, 0.00629257,  0.0059154, 0.004225, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+
+    sols[5] << 0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0, 0.0122073, 0.0152935, 0.0111486,  0.00555446,  0.00126729,  0,  0,
+    0,  0, 0.0152935,  0.018833, 0.0138922,  0.00667218,  0.00157656,  0,  0,
+    0,  0, 0.0111486, 0.0138922, 0.0102615,  0.00516478,  0.00132895,  0,  0,
+    0,  0,  0.00555446,  0.00667218,  0.00516478,  0.00251616, 0.000827562,  0,  0,
+    0,  0,  0.00126729,  0.00157656,  0.00132895, 0.000827562, 0.0004154,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,  0,  0,  0,  0;
+
+    for (bias=1; bias<4; bias++) {
+        for (fishmodel=0; fishmodel < 2; fishmodel++) {
+            populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy,
+                                  oucor, mux, muy, fishmodel);
+            calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, bias,
+                                  range, peak, sd);
+            //gGrid.printData();
+            methodID = "checkCalculateGoodness bias:" + std::to_string(bias) + " fishmodel:" + std::to_string(fishmodel);
+            result = result & compareMatrix(&gGrid.data, &sols[(bias-1) * 2 + fishmodel], methodID);
+        }
+    }
+    return result;
 }
 /**
  * Checks the cumulative distribution functions.
@@ -159,7 +251,8 @@ bool checkDetectionGradient() {
         makeDistGradient(&distanceGradient, 2);
         detectionGradient.resize(size,size);
         makeDetectionGradient(&detectionGradient, &distanceGradient,
-                sensorPeakDetectionProbability, SDofSensorDetectionRange);
+                              sensorPeakDetectionProbability,
+                              SDofSensorDetectionRange);
         return compareMatrix(&solution, &detectionGradient, "checkDetectionGradient");
 }
 

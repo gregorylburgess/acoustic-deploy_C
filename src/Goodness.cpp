@@ -74,10 +74,10 @@ double validate(double x) {
  * @return The value at a point x on a normal distribution with a given sd.
  */
 double normalDist(double sd, double x) {
-    double exponent = -1*pow(x, 2.0),
-           base = 1/(sd*sqrt(2*M_PI));
-    exponent = exponent/(2*pow(sd, 2.0));
-    exponent = exp(exponent);
+    double exponent = -1*std::pow(x, 2.0),
+           base = 1/(sd*std::sqrt(2*M_PI));
+    exponent = exponent/(2*std::pow(sd, 2.0));
+    exponent = std::exp(exponent);
     return(base*exponent);
 }
 
@@ -87,13 +87,13 @@ double normalDist(double sd, double x) {
  * @param double peak A scaling factor representing the maximum value in a
  *                    range.
  * @param double sd The sd value of the normal distribution.  Determines the
- *                     width of the curve.
+ *                  width of the curve.
  * @param double x The point on the curve to evaluate.
  * @return The value of f(x) scaled into the range [0, peak], where f(x)
  *         is a normal distribution defined by sd.
  */
 double normalProb(double peak, double sd, double x) {
-    return peak*(normalDist(sd, abs(x))/normalDist(sd, 0));
+    return peak*(normalDist(sd, std::abs(x))/normalDist(sd, 0));
 }
 
 /**
@@ -192,7 +192,8 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
                       &distanceGradient, &detectionGradient, sensorRange,
                       sensorPeakDetectionProbability, SDofSensorDetectionRange);
     } else {
-        printError("Invalid bias value.", -2, acousticParams["timestamp"]);
+        printError("ERROR! Invalid bias value.", -2,
+                    acousticParams["timestamp"]);
     }
 }
 
@@ -231,7 +232,9 @@ void goodFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
     double endRow = rows-border;
 
     for (int r = border; r < rows-border; r++) {
-        std::cout  <<  (r + 1) / endRow  <<  "\n";
+        if (debug) {
+            std::cout  <<  (r + 1) / endRow  <<  "\n";
+        }
         rstart = r-range;
         for (int c = border; c < cols-border; c++) {
             cstart = c-range;
@@ -289,8 +292,9 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
     visibilityGrid.setConstant(0);
 
     for (int r = border; r < rows-border; r++) {
-        // out << "\n" << r;
-        std::cout  <<  (r + 1) / endRow  <<  "\n";
+        if (debug) {
+            std::cout  <<  (r + 1) / endRow  <<  "\n";
+        }
         for (int c = border; c < cols-border; c++) {
             // compute the visibility grid for each cell
             calcVizGrid(topographyGrid, distanceGradient, &visibilityGrid,
@@ -369,10 +373,10 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
         mean = stod(acousticParams["meanRelativePosition"]);
         sd = stod(acousticParams["RelativePositionSD"]);
     }
-    std::cout  <<  "mean:"  <<  mean  <<  "\nsd:"  <<  sd  <<  "\n";
-
-    std::cout  <<  "useRelativeBehaviorModel = "  <<  useRelativeBehaviorModel  <<
-              "\n";
+    if (debug) {
+        std::cout  <<  "useRelativeBehaviorModel = "  <<
+                        useRelativeBehaviorModel  <<  "\n";
+    }
     // declare and initialize matrices
     Eigen::MatrixXd visibilityMatrix;
     Eigen::MatrixXd localTopography;
@@ -386,7 +390,9 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
     fishVisibility.setConstant(0);
 
     for (int r = border; r < rows-border; r++) {
-        std::cout  <<  (r + 1) / endRow  <<  "\n";
+        if (debug) {
+            std::cout  <<  (r + 1) / endRow  <<  "\n";
+        }
         // out  <<  "\n"  <<  r;
         for (int c = border; c < cols-border; c++) {
             // compute the visibility grid for each cell
@@ -463,7 +469,8 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
  * @return A new, offset point.
  */
 std::pair<int, int> offset(const std::pair<int, int> *point) {
-    std::pair<int, int> newPoint = std::make_pair(point->first + .5, point->second + .5);
+    std::pair<int, int> newPoint = std::make_pair(point->first + .5,
+                                                  point->second + .5);
     return newPoint;
 }
 
@@ -515,8 +522,8 @@ std::vector<std::pair<int, int>> getCells(const std::pair<int, int> *origin,
             for (y = startY + 1; y  <=  endY; y ++) {
                 x = (y - b) / m;
                 x1 = floor(x);
-                // std::cout  << "Y: " << y  << ", X: " << x << "; added(" << x1 <<
-                //   ", " << y-1 << ")
+                // std::cout  << "Y: " << y  << ", X: " << x << "; added(" <<
+                //                x1 << ", " << y-1 << ")
                 //  and (" << x1 << ", " << y << ")\n";
                 pairs.insert(std::make_pair(x1, y-1));
                 pairs.insert(std::make_pair(x1, y));
@@ -548,7 +555,8 @@ std::vector<std::pair<int, int>> getCells(const std::pair<int, int> *origin,
         // Sort pairs by distance from origin
         sortByDist sorter(origin->first, origin->second);
         sort(vpairs.begin(), vpairs.end(), sorter);
-        // std::cout  <<   "Returning vector of size "  <<  vpairs.size()  <<  "\n";
+        // std::cout  <<   "Returning vector of size "  <<  vpairs.size()  <<
+        // "\n";
 
         return vpairs;
     } else {
@@ -662,7 +670,8 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
     // Add cells to process to a list.
     for (i = 0; i  <  sensorDiameter; i ++) {
         for (j = 0; j  <  sensorDiameter; j ++)
-            unprocessedCells.insert((const std::pair<int, int>) std::make_pair(i, j));
+            unprocessedCells.insert(
+                    (const std::pair<int, int>) std::make_pair(i, j));
     }
     unprocessedCells.erase(origin);
     maxSlope = 0;

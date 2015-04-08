@@ -103,8 +103,9 @@ void  Graph::printContourGraph(int width, int height,
             setOuput = "set output \'" + outfile + "\';",
             // setScale = "set logscale cb;",
             setScale = "set autoscale y",
-            setCBRange = "set cbrange[" + std::to_string(grid->data.minCoeff()) +
-                           ":" + std::to_string(grid->data.maxCoeff()) + "];",
+            setCBRange = "set cbrange[" + std::to_string(
+                            grid->data.minCoeff()) + ":" +
+                            std::to_string(grid->data.maxCoeff()) + "];",
             sensorLabelColor = "white",
             setLegendColor = "set key textcolor rgb \"#00aa00\"",
             setLegendFont = "set key font \",12\"",
