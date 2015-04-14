@@ -31,4 +31,5 @@ bool negativeHorizontal();
 bool positiveVertical();
 bool negativeVertical();
 bool duplicatePoint();
+bool testSelectTopSpots();
 #endif

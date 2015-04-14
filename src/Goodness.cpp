@@ -621,6 +621,8 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
                                                 (*distGradient)(r, c));
         }
     }
+
+    (*detectionGradient)(rows / 2, c / 2) = sensorPeakDetectionProbability;
 }
 
 /**
@@ -706,11 +708,13 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
 /**
  * Selects the top n spots in the goodnesGrid, with the highest unique
  * detection probability, and returns a matrix containing the locations.
+ * @param goodnessGrid The pre-computed goodnessGrid.
  * @param bestSensors A pointer to an empty Matrix, results will be dumped
  *        here.
+ * @param userSensors A Matrix with two columns that holds the r,c pairs
+ *        for user specified sensors, with one sensor per row.
  * @param numTotalSensors The number of spots to search for.  The number of
  *        rows in the resultant matrix.
- * @param goodnessGrid The pre-computed goodnessGrid.
  * @param sensorRange he maximum detection range of a sensor given in units
  *        of grid cells.
  * @param sensorPeakDetectionProbability The probability of detecting a tag
@@ -720,7 +724,7 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
  *        detection curve.
  */
 void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
-                    Eigen::MatrixXd userSensors,
+                    Eigen::MatrixXd* userSensors,
                     int numTotalSensors, int sensorRange,
                     double sensorPeakDetectionProbability,
                     double SDofSensorDetectionRange) {
@@ -737,16 +741,17 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
                           sensorPeakDetectionProbability,
                           SDofSensorDetectionRange);
     suppressionGradient.array() *= -1;
-    suppressionGradient.array() += 1;
+    suppressionGradient.array() += sensorPeakDetectionProbability;
 
-    // downWeigh all the user sensor locations
-    for (i = 0; i < userSensors.rows(); i++) {
+    // DownWeigh all the user-specified sensor locations
+    for (i = 0; i < userSensors->rows(); i++) {
         temp = goodnessGrid->data.block((*userSensors)(i, 0) - sensorRange,
                                         (*userSensors)(i, 1) - sensorRange,
                                         size, size);
         goodnessGrid->data.block(row - sensorRange, col - sensorRange,
-                                 size, size) = temp * suppressionGradient;
+                                 size, size) = temp.cwiseProduct(suppressionGradient);
     }
+
     // Select the top location in the goodness grid
     for (i = 0; i < numTotalSensors; i++) {
         // Find the max coefficient in the matrix
@@ -755,10 +760,10 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
         (*bestSensors)(i, 0) = row;
         (*bestSensors)(i, 1) = col;
         (*bestSensors)(i, 2) = goodnessGrid->data(row, col);
-        // downWeigh the chosen point
+        // DownWeigh the chosen point
         temp = goodnessGrid->data.block(row - sensorRange, col - sensorRange,
                                   size, size);
         goodnessGrid->data.block(row - sensorRange, col - sensorRange,
-                                 size, size) = temp * suppressionGradient;
+                                 size, size) = temp.cwiseProduct(suppressionGradient);
     }
 }

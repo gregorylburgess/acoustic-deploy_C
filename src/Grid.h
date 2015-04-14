@@ -25,6 +25,7 @@ class Grid {
     Grid(Grid* mat, std::string name);
     Grid(Eigen::MatrixXd dat, std::string newName);
     void clearNA();
+    Eigen::MatrixXd* getDataPointer();
     void printData();
     void replace(double find, double replace);
     void setAll(double val);

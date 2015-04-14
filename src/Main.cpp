@@ -21,7 +21,7 @@
 #include "Test/TestGoodness.h"
 
 int main() {
-    bool test = false, simulateBathy = false;
+    bool test = true, simulateBathy = false;
 
     if (test) {
         runTests();
@@ -156,8 +156,8 @@ int main() {
     Eigen::MatrixXd userSensors;
     bestSensors.resize(numTotalSensors, 3);
     userSensors.resize(numUserSensors, 2);
-    selectTopSpots(&gGrid, &bestSensors, numTotalSensors, sensorRange, peak,
-                   sd);
+    selectTopSpots(&gGrid, &bestSensors, &userSensors, numTotalSensors,
+                   sensorRange, peak, sd);
     // A pointer to the array with the Contour depths
     std::vector<double> *contourPtr = &contourLevels;
     // Generate graphs

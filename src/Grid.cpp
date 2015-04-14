@@ -128,3 +128,10 @@ void Grid::setAll(double val) {
         }
     }
 }
+
+/**
+ * Returns a pointer to the underlying Eigen Matrix.
+ */
+Eigen::MatrixXd* Grid::getDataPointer() {
+    return &data;
+}
