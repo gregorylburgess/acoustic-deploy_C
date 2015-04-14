@@ -46,4 +46,9 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
 void makeDistGradient(Eigen::MatrixXd* distGradient, int rng);
 double normalProb(double peak, double sd, double x);
 std::pair<int, int> offset(const std::pair<int, int> *point);
+void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
+                    Eigen::MatrixXd* userSensors,
+                    int numTotalSensors, int sensorRange,
+                    double sensorPeakDetectionProbability,
+                    double SDofSensorDetectionRange);
 #endif  // SRC_GOODNESS_H_

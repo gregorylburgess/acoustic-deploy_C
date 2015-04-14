@@ -21,7 +21,7 @@
 #include "Test/TestGoodness.h"
 
 int main() {
-    bool test = true, simulateBathy = false;
+    bool test = false, simulateBathy = false;
 
     if (test) {
         runTests();
@@ -34,6 +34,9 @@ int main() {
     acousticParams.insert({ "cellSize", "5" });
     acousticParams.insert({ "fishmodel", "0" });
     acousticParams.insert({ "sensorRange", "50" });
+    acousticParams.insert({ "numUserSensors", "0" });
+    acousticParams.insert({ "numOptimalSensors", "20" });
+    acousticParams.insert({ "numProjectedSensors", "10" });
     acousticParams.insert({ "bias", "2" });
 
     acousticParams.insert({ "ousdx", ".1" });
@@ -54,19 +57,33 @@ int main() {
     acousticParams.insert({ "timestamp", "-1" });
     acousticParams.insert({ "logScaleGraphColoring", "1" });
     acousticParams.insert({ "contourDepths", "0,-20,-40,-80" });
-
     // TODO(Greg) Data validation
-    int startRow = 100,
-        startCol = 0,  // 450,340,200,200 (1km)
-        RowDist = 800, ColDist = 1500, height = 800, width = 1500, i = 0,
-        bias = 3, sensorRange = 4, peak = 1, sd = 1,
-        cellSize = std::stoi(acousticParams["cellSize"]);
-    double ousdx = std::stod(acousticParams["ousdx"]),
-           ousdy = std::stod(acousticParams["ousdy"]),
-           oucor = std::stod(acousticParams["oucor"]),
-           mux = std::stod(acousticParams["mux"]),
-           muy   = std::stod(acousticParams["muy"]);
-    double fishmodel = std::stod(acousticParams["fishmodel"]);
+    int    startRow = 100,
+           startCol = 0,  // 450,340,200,200 (1km)
+           RowDist = 800,
+           ColDist = 1500,
+           height = 800,
+           width = 1500,
+           bias = 3,
+           sensorRange = 4,
+           peak = 1, sd = 1,
+           cellSize = std::stoi(acousticParams["cellSize"]),
+           numUserSensors = std::stoi(acousticParams["numUserSensors"]),
+           numOptimalSensors =
+                   std::stoi(acousticParams["numOptimalSensors"]),
+           numProjectedSensors =
+                   std::stoi(acousticParams["numProjectedSensors"]),
+           numTotalSensors = numOptimalSensors + numProjectedSensors +
+                             numUserSensors,
+           i = 0;
+
+    double ousdx     = std::stod(acousticParams["ousdx"]),
+           ousdy     = std::stod(acousticParams["ousdy"]),
+           oucor     = std::stod(acousticParams["oucor"]),
+           mux       = std::stod(acousticParams["mux"]),
+           muy       = std::stod(acousticParams["muy"]),
+           fishmodel = std::stod(acousticParams["fishmodel"]);
+
     std::string token;
     border = sensorRange;
     clock_t begin, end, vizBegin, vizEnd;
@@ -107,7 +124,7 @@ int main() {
     Grid tGrid(RowDist + 2 * border, ColDist + 2 * border, "Topography");
     tGrid.data.setConstant(0);
     // Fetch or simulate topography
-    std::cout << "Geting topography";
+    std::cout << "Getting topography";
     if (simulateBathy) {
         simulatetopographyGrid(&tGrid, RowDist, ColDist);
     } else {
@@ -132,6 +149,15 @@ int main() {
     Graph tGraph = Graph(&tGrid);
     Graph bGraph = Graph(&bGrid);
 
+    // TODO(Greg) parse user sensor placements
+
+    // Grab the top n sensor r,c locations and values.
+    Eigen::MatrixXd bestSensors;
+    Eigen::MatrixXd userSensors;
+    bestSensors.resize(numTotalSensors, 3);
+    userSensors.resize(numUserSensors, 2);
+    selectTopSpots(&gGrid, &bestSensors, numTotalSensors, sensorRange, peak,
+                   sd);
     // A pointer to the array with the Contour depths
     std::vector<double> *contourPtr = &contourLevels;
     // Generate graphs
