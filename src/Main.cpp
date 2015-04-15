@@ -7,6 +7,7 @@
 //============================================================================
 #include <stdlib.h>
 #include <time.h>
+#include <Dense>
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -21,11 +22,10 @@
 #include "Test/TestGoodness.h"
 
 int main() {
-    bool test = true, simulateBathy = false;
+    bool test = false, simulateBathy = false;
 
     if (test) {
         runTests();
-        std::cout << "Done";
         return 0;
     }
 
@@ -34,7 +34,7 @@ int main() {
     acousticParams.insert({ "cellSize", "5" });
     acousticParams.insert({ "fishmodel", "0" });
     acousticParams.insert({ "sensorRange", "50" });
-    acousticParams.insert({ "numUserSensors", "0" });
+    acousticParams.insert({ "numUserSensors", "1" });
     acousticParams.insert({ "numOptimalSensors", "20" });
     acousticParams.insert({ "numProjectedSensors", "10" });
     acousticParams.insert({ "bias", "2" });
@@ -59,9 +59,9 @@ int main() {
     acousticParams.insert({ "contourDepths", "0,-20,-40,-80" });
     // TODO(Greg) Data validation
     int    startRow = 100,
-           startCol = 0,  // 450,340,200,200 (1km)
-           RowDist = 800,
-           ColDist = 1500,
+           startCol = 200,  // 450,340,200,200 (1km)
+           RowDist = 100,   // 100 0 800 1500 (5m)
+           ColDist = 100,
            height = 800,
            width = 1500,
            bias = 3,
@@ -73,8 +73,7 @@ int main() {
                    std::stoi(acousticParams["numOptimalSensors"]),
            numProjectedSensors =
                    std::stoi(acousticParams["numProjectedSensors"]),
-           numTotalSensors = numOptimalSensors + numProjectedSensors +
-                             numUserSensors,
+           numTotalSensors = numOptimalSensors + numProjectedSensors,
            i = 0;
 
     double ousdx     = std::stod(acousticParams["ousdx"]),
@@ -104,7 +103,6 @@ int main() {
         i++;
     }
     sort(&contourLevels, &contourLevels + numContourDepths);
-
     // File path variables
     std::string outputDataFilePath = "data/", outputDataFileType = ".dat",
            bathymetryTitle = "Topography", habitatTitle = "Habitat",
@@ -153,13 +151,19 @@ int main() {
 
     // Grab the top n sensor r,c locations and values.
     Eigen::MatrixXd bestSensors;
+    bestSensors.resize(10, 3);
     Eigen::MatrixXd userSensors;
-    bestSensors.resize(numTotalSensors, 3);
-    userSensors.resize(numUserSensors, 2);
-    selectTopSpots(&gGrid, &bestSensors, &userSensors, numTotalSensors,
+    //userSensors.resize(2, 2);
+
+    /*selectTopSpots(&gGrid, &bestSensors, &userSensors, numTotalSensors,
                    sensorRange, peak, sd);
+*/
+
+
     // A pointer to the array with the Contour depths
     std::vector<double> *contourPtr = &contourLevels;
+
+
     // Generate graphs
     try {
         // Print the matrix & data files for Topography Grid

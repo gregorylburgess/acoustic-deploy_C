@@ -751,7 +751,8 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
                                         col - sensorRange,
                                         size, size);
         goodnessGrid->data.block(row - sensorRange, col - sensorRange,
-                                 size, size) = temp.cwiseProduct(suppressionGradient);
+                                 size, size) =
+                                 temp.cwiseProduct(suppressionGradient);
     }
 
     // Select the top location in the goodness grid
@@ -766,6 +767,7 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
         temp = goodnessGrid->data.block(row - sensorRange, col - sensorRange,
                                   size, size);
         goodnessGrid->data.block(row - sensorRange, col - sensorRange,
-                                 size, size) = temp.cwiseProduct(suppressionGradient);
+                                 size, size) =
+                                 temp.cwiseProduct(suppressionGradient);
     }
 }
