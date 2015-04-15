@@ -725,7 +725,7 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
  */
 void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
                     Eigen::MatrixXd* userSensors,
-                    int numTotalSensors, int sensorRange,
+                    int numSensorsToPlace, int sensorRange,
                     double sensorPeakDetectionProbability,
                     double SDofSensorDetectionRange) {
     int row = 0, col = 0, i = 0,
@@ -745,15 +745,17 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
 
     // DownWeigh all the user-specified sensor locations
     for (i = 0; i < userSensors->rows(); i++) {
-        temp = goodnessGrid->data.block((*userSensors)(i, 0) - sensorRange,
-                                        (*userSensors)(i, 1) - sensorRange,
+        row = (*userSensors)(i, 0);
+        col = (*userSensors)(i, 1);
+        temp = goodnessGrid->data.block(row - sensorRange,
+                                        col - sensorRange,
                                         size, size);
         goodnessGrid->data.block(row - sensorRange, col - sensorRange,
                                  size, size) = temp.cwiseProduct(suppressionGradient);
     }
 
     // Select the top location in the goodness grid
-    for (i = 0; i < numTotalSensors; i++) {
+    for (i = 0; i < numSensorsToPlace; i++) {
         // Find the max coefficient in the matrix
         goodnessGrid->data.maxCoeff(&row, &col);
         // Record the entry

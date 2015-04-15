@@ -31,5 +31,6 @@ bool negativeHorizontal();
 bool positiveVertical();
 bool negativeVertical();
 bool duplicatePoint();
+void resetGoodnessGrid (Eigen::MatrixXd* grid);
 bool testSelectTopSpots();
 #endif

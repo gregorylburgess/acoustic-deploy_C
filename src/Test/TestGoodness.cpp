@@ -461,60 +461,109 @@ bool duplicatePoint() {
 	return false;
 }
 
+void resetGoodnessGrid (Eigen::MatrixXd* grid) {
+    *grid << 0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 1, 1, 2, 1, 1, 0, 0,
+          0, 0, 1, 1, 1, 1, 1, 0, 0,
+          0, 0, 1, 1, 1, 1, 1, 0, 0,
+          0, 0, 1, 3, 1, 2, 1, 0, 0,
+          0, 0, 1, 1, 1, 1, 1, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 0, 0, 0, 0, 0, 0, 0;
+}
 /**
  * Tests selectTopSpots().
  */
 bool testSelectTopSpots() {
     int sensorRange = 2,
-        numOptimalSensors = 3,
-        numUserSensors = 0,
-        numTotalSensors = numOptimalSensors + numUserSensors;
+        numSensorsToPlace = 3,
+        i=0;
     double sensorPeakDetectionProbability = 1,
            SDofSensorDetectionRange = 1;
     border = sensorRange;
-
+    bool result = true;
     int size = 2 * (sensorRange + border) + 1;
     Grid* goodnessGrid = new Grid(size, size,"goodness");
-    goodnessGrid->data << 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 1, 1, 2, 1, 1, 0, 0,
-                          0, 0, 1, 1, 1, 1, 1, 0, 0,
-                          0, 0, 1, 1, 1, 1, 1, 0, 0,
-                          0, 0, 1, 3, 1, 2, 1, 0, 0,
-                          0, 0, 1, 1, 1, 1, 1, 0, 0,
-                          0, 0, 0, 0, 0, 0, 0, 0, 0,
-                          0, 0, 0, 0, 0, 0, 0, 0, 0;
-    Eigen::MatrixXd bestSensors;
-    Eigen::MatrixXd userSensors;
-    bestSensors.resize(numOptimalSensors, 3);
-    userSensors.resize(numUserSensors,2);
-    bestSensors.setConstant(0);
-    userSensors.setConstant(0);
-    selectTopSpots(goodnessGrid, &bestSensors, &userSensors,
-                   numTotalSensors, sensorRange,
-                   sensorPeakDetectionProbability,
-                   SDofSensorDetectionRange);
-
+    Eigen::MatrixXd bestSensors[3];
+    Eigen::MatrixXd userSensors[3];
+    //userSensors[0].resize(2, 0);
+    userSensors[1].resize(2, 2);
+    userSensors[1] << 5, 3,
+                      2, 4;
+    userSensors[2].resize(2, 2);
+    userSensors[2] << 5, 3,
+                      2, 4;
     // Solutions
-    Eigen::MatrixXd solGoodnessGrid;
-    solGoodnessGrid.resize(size,size);
-    solGoodnessGrid <<  0, 0, 0,        0,        0,        0,        0,        0, 0,
-                        0, 0, 0,        0,        0,        0,        0,        0, 0,
-                        0, 0, 0.864665, 0.393469, 0,        0.393469, 0.864665, 0, 0,
-                        0, 0, 0.842568, 0.536562, 0.331525, 0.536562, 0.842568, 0, 0,
-                        0, 0, 0.620543, 0.331525, 0.3455,   0.331525, 0.620543, 0, 0,
-                        0, 0, 0.393469, 0,        0.154818, 0,        0.393469, 0, 0,
-                        0, 0, 0.632121, 0.361171, 0.399576, 0.361171, 0.632121, 0, 0,
-                        0, 0, 0,        0,        0,        0,        0,        0, 0,
-                        0, 0, 0,        0,        0,        0,        0,        0, 0;
-    Eigen::MatrixXd solBestSensors;
-    solBestSensors.resize(numTotalSensors,3);
-    solBestSensors << 5, 3, 3,
-                      2, 4, 2,
-                      5, 5, 1.72933;
+    Eigen::MatrixXd solGoodnessGrid[3];
+    Eigen::MatrixXd solBestSensors[3];
+    for (i = 0;i < 3;i++) {
+        bestSensors[i].resize(numSensorsToPlace, 3);
+        bestSensors[i].setConstant(0);
+        solGoodnessGrid[i].resize(size, size);
+        solGoodnessGrid[i].setConstant(0);
+        solBestSensors[i].resize(numSensorsToPlace, 3);
+        solBestSensors[i].setConstant(0);
+    }
 
-    bool result = compareMatrix(goodnessGrid->getDataPointer(), &solGoodnessGrid, "testSelectTopSpots-GoodnessGrid");
-    result = result & compareMatrix(&bestSensors, &solBestSensors, "testSelectTopSpots-BestSensors");
+    solBestSensors[0] <<  5, 3, 3,
+                          2, 4, 2,
+                          5, 5, 1.72933;
+
+    // skip initializing solBestSensors[1] because no optimal sensors are placed
+
+    solBestSensors[2] <<  5, 5,  1.72933,
+                          2, 2,  0.864665,
+                          2, 6,  0.864665;
+
+    solGoodnessGrid[0] <<   0, 0, 0,        0,        0,        0,        0,        0, 0,
+                            0, 0, 0,        0,        0,        0,        0,        0, 0,
+                            0, 0, 0.864665, 0.393469, 0,        0.393469, 0.864665, 0, 0,
+                            0, 0, 0.842568, 0.536562, 0.331525, 0.536562, 0.842568, 0, 0,
+                            0, 0, 0.620543, 0.331525, 0.3455,   0.331525, 0.620543, 0, 0,
+                            0, 0, 0.393469, 0,        0.154818, 0,        0.393469, 0, 0,
+                            0, 0, 0.632121, 0.361171, 0.399576, 0.361171, 0.632121, 0, 0,
+                            0, 0, 0,        0,        0,        0,        0,        0, 0,
+                            0, 0, 0,        0,        0,        0,        0,        0, 0;
+
+    solGoodnessGrid[1] <<   0,       0,       0,        0,        0,        0,        0,        0,       0,
+                            0,       0,       0,        0,        0,        0,        0,        0,       0,
+                            0,       0,       0.864665, 0.393469, 0,        0.393469, 0.864665, 0,       0,
+                            0,       0,       0.842568, 0.546572, 0.361171, 0.620543, 0.917915, 0,       0,
+                            0,       0,       0.620543, 0.361171, 0.546572, 0.842568, 0.981684, 0,       0,
+                            0,       0,       0.393469, 0,        0.393469, 1.72933,  1,        0,       0,
+                            0,       0,       0.632121, 0.393469, 0.632121, 0.917915, 1,        0,       0,
+                            0,       0,       0,        0,        0,        0,        0,        0,       0,
+                            0,       0,       0,        0,        0,        0,        0,        0,       0;
+
+
+    solGoodnessGrid[2] <<   0,       0,       0,        0,        0,        0,        0,        0,       0,
+                            0,       0,       0,        0,        0,        0,        0,        0,       0,
+                            0,       0,       0,        0.154818, 0,        0.154818, 0,        0,       0,
+                            0,       0,       0.331525, 0.339172, 0.279332, 0.339172, 0.331525, 0,       0,
+                            0,       0,       0.536562, 0.304311, 0.332959, 0.304311, 0.536562, 0,       0,
+                            0,       0,       0.393469, 0,        0.154818, 0,        0.393469, 0,       0,
+                            0,       0,       0.632121, 0.361171, 0.399576, 0.361171, 0.632121, 0,       0,
+                            0,       0,       0,        0,        0,        0,        0,        0,       0,
+                            0,       0,       0,        0,        0,        0,        0,        0,       0;
+
+    // Run Tests
+    for (i = 0; i < 3; i++) {
+        if (i == 1) {
+            numSensorsToPlace = 0;
+        }
+        else {
+            numSensorsToPlace = 3;
+        }
+        resetGoodnessGrid(goodnessGrid->getDataPointer());
+        selectTopSpots(goodnessGrid, &bestSensors[i], &userSensors[i],
+                       numSensorsToPlace, sensorRange,
+                       sensorPeakDetectionProbability,
+                       SDofSensorDetectionRange);
+
+        //std::cout<< "i:"<< i <<"\nGoodnessGrid:\n" << goodnessGrid->data <<"\n\n\nbestSensors:\n" <<bestSensors[i]<<"\n\n";
+        result = result & compareMatrix(goodnessGrid->getDataPointer(), &solGoodnessGrid[i], "testSelectTopSpots-GoodnessGrid:" + std::to_string(i));
+        result = result & compareMatrix(&bestSensors[i], &solBestSensors[i], "testSelectTopSpots-BestSensors:" + std::to_string(i));
+    }
     return result;
-    return true;
 }
