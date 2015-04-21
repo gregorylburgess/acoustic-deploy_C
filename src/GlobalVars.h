@@ -17,4 +17,5 @@
 extern std::unordered_map <std::string, std::string> acousticParams;
 extern int border;
 extern bool debug;
+extern bool silent;
 #endif  // SRC_GLOBALVARS_H_

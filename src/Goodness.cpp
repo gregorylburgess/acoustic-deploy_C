@@ -747,6 +747,10 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
     for (i = 0; i < userSensors->rows(); i++) {
         row = (*userSensors)(i, 0);
         col = (*userSensors)(i, 1);
+        if (debug) {
+            std::cout << "Blocking " << row - sensorRange << "," <<
+                         col - sensorRange << " for " << size << " cells.\n";
+        }
         temp = goodnessGrid->data.block(row - sensorRange,
                                         col - sensorRange,
                                         size, size);

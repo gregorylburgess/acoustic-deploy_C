@@ -35,7 +35,7 @@ Graph::Graph(Grid* g) {
  * @param contourLevels A pointer to an array of doubles holding contour
  *          levels (depth as a negative integer).
  */
-void Graph::printContour(std::vector <double> *contourLevels) {
+void Graph::printContour(std::vector <std::string> *contourLevels) {
     std::cout << "\n\nWriting contour file...\n";
     Gnuplot plots;
     std::stringstream ss;
@@ -91,7 +91,7 @@ void Graph::printContour(std::vector <double> *contourLevels) {
  *                scale, otherwise a linear scale is used.
  */
 void  Graph::printContourGraph(int width, int height,
-                                std::vector <double> *contourLevels,
+                                std::vector <std::string> *contourLevels,
                                 bool logScaleGraphColoring) {
     std::cout << "\n\nPrinting " << grid->name << " graph...\n";
     int i = 0, numOfLevels = stoi(acousticParams["numContourDepths"]);
@@ -212,7 +212,6 @@ void  Graph::printContourGraph(int width, int height,
                 std::cout << plotData << "\n";
             }
             plots.cmd(plotData);
-            std::cout  << "Finished writing graph data files" << "\n";
         }
         catch (GnuplotException &ge) {
             std::cout << ge.what() << std::endl;
@@ -227,7 +226,6 @@ void Graph::writeMat() {
     std::ofstream out;
     int rows = grid->rows - 2 * border,
         cols = grid->cols - 2 * border;
-    std::cout  << "writing " <<  rows << ","  << cols << " r,c";
     out.open(("data/" + grid->name + ".mat").c_str());
     out << grid->data.block(border, border, rows, cols);
     out.close();

@@ -34,6 +34,21 @@ void printError(std::string msg, int errcode, std::string timestamp) {
 }
 
 /**
+ * Parses a character delimited string, returning a vector of the values stored within as strings.
+ * @param str The comma delimited string to parse.
+ * @param rslt A pointer to the resulting vector.
+ * @param delimiter The delimiting character.
+ */
+void parseCDString(std::vector<std::string>* rslt, std::string str,
+                   char delimiter) {
+    std::string token;
+    std::istringstream stream(str);
+    while (std::getline(stream, token, delimiter)) {
+        rslt->push_back(token);
+    }
+}
+
+/**
  * Creates an array containing a regular sequence of numbers.
  * @param start The starting value of the sequence.
  * @param end The ending value of the sequence.

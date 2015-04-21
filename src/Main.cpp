@@ -34,7 +34,7 @@ int main() {
     acousticParams.insert({ "cellSize", "5" });
     acousticParams.insert({ "fishmodel", "0" });
     acousticParams.insert({ "sensorRange", "50" });
-    acousticParams.insert({ "numUserSensors", "1" });
+    acousticParams.insert({ "userSensors", "100,100,200,200,100,200" });
     acousticParams.insert({ "numOptimalSensors", "20" });
     acousticParams.insert({ "numProjectedSensors", "10" });
     acousticParams.insert({ "bias", "2" });
@@ -59,21 +59,19 @@ int main() {
     acousticParams.insert({ "contourDepths", "0,-20,-40,-80" });
     // TODO(Greg) Data validation
     int    startRow = 100,
-           startCol = 200,  // 450,340,200,200 (1km)
-           RowDist = 100,   // 100 0 800 1500 (5m)
-           ColDist = 100,
-           height = 800,
-           width = 1500,
+           startCol = 0,  // 450,340,200,200 (1km)
+           RowDist = 300,   // 100 0 800 1500 (5m)
+           ColDist = 300,
+           height = RowDist,
+           width = ColDist,
            bias = 3,
            sensorRange = 4,
            peak = 1, sd = 1,
            cellSize = std::stoi(acousticParams["cellSize"]),
-           numUserSensors = std::stoi(acousticParams["numUserSensors"]),
            numOptimalSensors =
                    std::stoi(acousticParams["numOptimalSensors"]),
            numProjectedSensors =
                    std::stoi(acousticParams["numProjectedSensors"]),
-           numTotalSensors = numOptimalSensors + numProjectedSensors,
            i = 0;
 
     double ousdx     = std::stod(acousticParams["ousdx"]),
@@ -83,26 +81,22 @@ int main() {
            muy       = std::stod(acousticParams["muy"]),
            fishmodel = std::stod(acousticParams["fishmodel"]);
 
-    std::string token;
     border = sensorRange;
     clock_t begin, end, vizBegin, vizEnd;
     double vizDelta, timeSpent;
     begin = clock();
-    // Compute contour depth meta data (used for graphical output)
-    std::istringstream contourstring(acousticParams["contourDepths"]);
-    size_t numContourDepths = count(acousticParams["contourDepths"].begin(),
-                                    acousticParams["contourDepths"].end(), ',')
-                                    + 1;
 
+    // Compute contour depth meta data (used for graphical output)
+    std::vector<std::string> contourLevels;
+    parseCDString(&contourLevels, acousticParams["contourDepths"], ',');
+    // Note the number of contours we need to graph
     acousticParams.insert({ "numContourDepths",
-                            std::to_string(numContourDepths) });
-    std::vector<double> contourLevels(numContourDepths);
-    i = 0;
-    while (getline(contourstring, token, ',')) {
-        contourLevels.push_back(std::stod(token));
-        i++;
-    }
-    sort(&contourLevels, &contourLevels + numContourDepths);
+                            std::to_string(contourLevels.size()) });
+
+    // TODO(Greg) Sort is broken, throws segfaults.  Possibly b/c file doesn't
+    //   exist (tried with pal5m.asc).  fix plx.
+    // sort(&contourLevels, &contourLevels + numContourDepths);
+
     // File path variables
     std::string outputDataFilePath = "data/", outputDataFileType = ".dat",
            bathymetryTitle = "Topography", habitatTitle = "Habitat",
@@ -122,22 +116,24 @@ int main() {
     Grid tGrid(RowDist + 2 * border, ColDist + 2 * border, "Topography");
     tGrid.data.setConstant(0);
     // Fetch or simulate topography
-    std::cout << "Getting topography";
+    std::cout << "Getting topography...";
     if (simulateBathy) {
+        // Simulate topography
         simulatetopographyGrid(&tGrid, RowDist, ColDist);
     } else {
+        // Fetch topography
         getBathy(&tGrid, acousticParams["inputFile"],
                  acousticParams["inputFileType"], size_t(startRow),
                  size_t(startCol), size_t(RowDist), size_t(ColDist),
                  acousticParams["seriesName"], acousticParams["timestamp"]);
     }
 
-    std::cout << "\nGetting Behavior";
+    std::cout << "\nGetting Behavior...";
     // Fill in Behavior Grid
     populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy, oucor, mux,
                          muy, fishmodel);
     vizBegin = clock();
-    std::cout << "\nGetting Goodness";
+    std::cout << "\nGetting Goodness...\n";
     // Calculate good sensor locations
     calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, bias, sensorRange, peak, sd);
     vizEnd = clock();
@@ -147,23 +143,28 @@ int main() {
     Graph tGraph = Graph(&tGrid);
     Graph bGraph = Graph(&bGrid);
 
-    // TODO(Greg) parse user sensor placements
+    std::cout << "\nReading userSensor List...\n";
+    // Parse User Sensor Placements
+    std::vector<std::string> userSensors;
+    parseCDString(&userSensors, acousticParams["userSensors"], ',');
+    std::cout << userSensors.size();
 
+    std::cout << "\nPlacing Sensors...";
     // Grab the top n sensor r,c locations and values.
     Eigen::MatrixXd bestSensors;
-    bestSensors.resize(10, 3);
-    Eigen::MatrixXd userSensors;
-    //userSensors.resize(2, 2);
-
-    /*selectTopSpots(&gGrid, &bestSensors, &userSensors, numTotalSensors,
+    Eigen::MatrixXd userSensorList;
+    bestSensors.resize(numOptimalSensors + numProjectedSensors, 3);
+    userSensorList.resize(userSensors.size()/2, 2);
+    for (i = 0; i < userSensorList.rows(); i ++) {
+        userSensorList(i, 0) = std::stoi(userSensors[2 * i]);
+        userSensorList(i, 1) = std::stoi(userSensors[2 * i + 1]);
+    }
+    selectTopSpots(&gGrid, &bestSensors, &userSensorList,
+                   numOptimalSensors + numProjectedSensors,
                    sensorRange, peak, sd);
-*/
 
-
-    // A pointer to the array with the Contour depths
-    std::vector<double> *contourPtr = &contourLevels;
-
-
+    std::cout << bestSensors << "\n";
+    std::cout<< "\nWriting Graphs...";
     // Generate graphs
     try {
         // Print the matrix & data files for Topography Grid
@@ -173,19 +174,19 @@ int main() {
         //     (Do this just once as it takes a loooong time).
         // tGraph.printContour(contourPtr);
         // Graph the Topography Grid with contour lines.
-        tGraph.printContourGraph(width, height, contourPtr, false);
+        tGraph.printContourGraph(width, height, &contourLevels, false);
 
         // Print the matrix & data files for Bathymetry Grid
         bGraph.writeMat();
         bGraph.writeDat();
         // Graph Behavior Grid with contour lines.
-        bGraph.printContourGraph(width, height, contourPtr, false);
+        bGraph.printContourGraph(width, height, &contourLevels, false);
 
         // Print the matrix & data files for Goodness Grid
         gGraph.writeMat();
         gGraph.writeDat();
         // Graph Goodness Grid with contour lines.
-        gGraph.printContourGraph(width, height, contourPtr, false);
+        gGraph.printContourGraph(width, height, &contourLevels, false);
     } catch (int e) {
         std::cout << "Error:" << e << "\n";
         return 0;
@@ -196,5 +197,6 @@ int main() {
     std::cout << "\nVisibility calculation took " << vizDelta << " s";
     timeSpent = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
     std::cout << "\nEntire Run took " << timeSpent << " s";
+
     return 0;
 }

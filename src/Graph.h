@@ -28,9 +28,10 @@ class Graph {
     std::string contourDataFile;
     Grid* grid;
     explicit Graph(Grid* g);
-    void printContour(std::vector<double> *contourLevels);
+    void printContour(std::vector<std::string> *contourLevels);
     void  printContourGraph(int width, int height,
-             std::vector<double> *contourLevels, bool logScaleGraphColoring);
+             std::vector<std::string> *contourLevels,
+             bool logScaleGraphColoring);
     void writeDat();
     void writeMat();
 };

@@ -185,7 +185,10 @@ void getBathy(Grid* topographyGrid, std::string inputFile,
                     // Get the number of columns in the file
                     if (cursor == colsLine) {
                         vLine = split(&line, ' ');
-                        std::cout << "\ncolsLine=" << vLine[vLine.size()-1];
+                        if (!silent) {
+                            std::cout << "\nAvailable Cols: " <<
+                                         vLine[vLine.size()-1];
+                        }
                         cols = stoi(vLine[vLine.size() - 1]);
 
                         if (cols < startCol + numCols) {
@@ -197,7 +200,10 @@ void getBathy(Grid* topographyGrid, std::string inputFile,
                     } else if (cursor == rowsLine) {
                         // Get the number of rows in the file.
                         vLine = split(&line, ' ');
-                        std::cout << "rowsLine=" << vLine[vLine.size() - 1];
+                        if (!silent) {
+                        std::cout << "Available Rows:" <<
+                                     vLine[vLine.size() - 1];
+                        }
                         rows = stoi(vLine[vLine.size() - 1]);
 
                         if (rows < startRow + numRows) {
@@ -209,7 +215,10 @@ void getBathy(Grid* topographyGrid, std::string inputFile,
                     } else if (cursor == nullLine) {
                         // Get the null value substitute
                         vLine = split(&line, ' ');
-                        std::cout << "nullLine=" << vLine[vLine.size() - 1];
+                        if (debug) {
+                            std::cout << "Null values =" <<
+                                         vLine[vLine.size() - 1] << "\n";
+                        }
                         null = stoi(vLine[vLine.size() - 1]);
                     }
                 } else if (cursor >= startRowIndex) {
@@ -237,7 +246,9 @@ void getBathy(Grid* topographyGrid, std::string inputFile,
             topographyGrid->data.block(border, border, numRows, numCols) =
                             temp.block(0, 0, numRows, numCols);
         } else {
-            std::cout << "\nUnable to open bathymetry file.\n";
+            std::cout << "\nUnable to open bathymetry file: \"" << inputFile <<
+                         "\"\n";
+            exit(0);
         }
     } else {
         // Invalid filetype
@@ -256,5 +267,4 @@ void getBathy(Grid* topographyGrid, std::string inputFile,
                   inputFile << "\nseriesName: " << seriesName << "\n";
         std::cout << "retval: " << retval << "\n" << "ncid: " << ncid << "\n\n";
     }
-    std::cout << "Exiting bathy";
 }
