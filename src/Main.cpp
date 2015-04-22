@@ -62,8 +62,8 @@ int main() {
            startCol = 0,  // 450,340,200,200 (1km)
            RowDist = 300,   // 100 0 800 1500 (5m)
            ColDist = 300,
-           height = RowDist,
-           width = ColDist,
+           height = 1000,
+           width = 1000,
            bias = 3,
            sensorRange = 4,
            peak = 1, sd = 1,
@@ -147,7 +147,6 @@ int main() {
     // Parse User Sensor Placements
     std::vector<std::string> userSensors;
     parseCDString(&userSensors, acousticParams["userSensors"], ',');
-    std::cout << userSensors.size();
 
     std::cout << "\nPlacing Sensors...";
     // Grab the top n sensor r,c locations and values.
@@ -174,19 +173,26 @@ int main() {
         //     (Do this just once as it takes a loooong time).
         // tGraph.printContour(contourPtr);
         // Graph the Topography Grid with contour lines.
-        tGraph.printContourGraph(width, height, &contourLevels, false);
+        bool plotSensors = true;
+        tGraph.printContourGraph(width, height, &contourLevels, plotSensors,
+                                 &userSensorList, &bestSensors,
+                                 numProjectedSensors, false);
 
         // Print the matrix & data files for Bathymetry Grid
         bGraph.writeMat();
         bGraph.writeDat();
         // Graph Behavior Grid with contour lines.
-        bGraph.printContourGraph(width, height, &contourLevels, false);
+        bGraph.printContourGraph(width, height, &contourLevels, plotSensors,
+                                 &userSensorList, &bestSensors,
+                                 numProjectedSensors, false);
 
         // Print the matrix & data files for Goodness Grid
         gGraph.writeMat();
         gGraph.writeDat();
         // Graph Goodness Grid with contour lines.
-        gGraph.printContourGraph(width, height, &contourLevels, false);
+        gGraph.printContourGraph(width, height, &contourLevels, plotSensors,
+                                 &userSensorList, &bestSensors,
+                                 numProjectedSensors, false);
     } catch (int e) {
         std::cout << "Error:" << e << "\n";
         return 0;

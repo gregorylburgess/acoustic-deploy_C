@@ -6,6 +6,7 @@
 // Description : A class definition for a Graph object.
 //============================================================================
 #include <stdlib.h>
+#include <Dense>
 #include <iostream>
 #include <iomanip>
 #include <string>
@@ -83,18 +84,23 @@ void Graph::printContour(std::vector <std::string> *contourLevels) {
  * Prints a graph of a given file with contour data as a .png file.
  * If a contour file was written [by calling printContour()], it prints
  * a contour graph. Otherwise, no contour lines are drawn.
- * @param int width The width of the resulting image.
- * @param int height The height of the resulting image.
- * @param double *contourLevels A pointer to an array of integers holding
+ * @param width The width of the resulting image.
+ * @param height The height of the resulting image.
+ * @param *contourLevels A pointer to an array of integers holding
  *                contour levels (depth as a negative integer).
- * @param bool logScaleGraphColoring If true, changes graph coloring to log
+ * @param logScaleGraphColoring If true, changes graph coloring to log
  *                scale, otherwise a linear scale is used.
  */
 void  Graph::printContourGraph(int width, int height,
                                 std::vector <std::string> *contourLevels,
+                                bool plotSensorIcons,
+                                Eigen::MatrixXd* userSensors,
+                                Eigen::MatrixXd* optimalSensors,
+                                int projectedSensors,
                                 bool logScaleGraphColoring) {
     std::cout << "\n\nPrinting " << grid->name << " graph...\n";
-    int i = 0, numOfLevels = stoi(acousticParams["numContourDepths"]);
+    int i = 0,
+        sensorIconRadius = 4;
     double  xstart = -.5,
             ystart = -.5;
     std::stringstream ss;
@@ -109,7 +115,9 @@ void  Graph::printContourGraph(int width, int height,
             sensorLabelColor = "white",
             setLegendColor = "set key textcolor rgb \"#00aa00\"",
             setLegendFont = "set key font \",12\"",
-            sensorIconColor = "blue",
+            optimalSensorIconColor = "blue",
+            userSensorIconColor = "purple",
+            projectedSensorIconColor = "pink",
             xrange,
             yrange,
             size = "set terminal gif size " + std::to_string(width) + "," +
@@ -139,52 +147,63 @@ void  Graph::printContourGraph(int width, int height,
     // ss << setCBRange;
 
     // Set x/y range values
-    ss << "set yrange [" << ystart << ":" << grid->rows - 2*border - 0.5  <<
+    ss << "set yrange [" << ystart << ":" << grid->rows - 2 * border - 0.5  <<
             "];";
     yrange = ss.str();
     ss.str("");
     ss.clear();
 
-    ss << "set xrange [" << xstart << ":" << grid->cols - 2*border - 0.5  <<
+    ss << "set xrange [" << xstart << ":" << grid->cols - 2 * border - 0.5  <<
             "];";
     xrange = ss.str();
     ss.str("");
     ss.clear();
-    // TODO(Greg)
-    /*
-    // Define labels for sensors
-    for () {
-    	xloc = ;
-    	yloc = ;
-    	ss << "set label \"" + i + "\" at " << xloc << "," << yloc << " front
-    	                     center tc rgb \"" << sensorLabelColor << "\"\n";
-    }
-    */
 
-    // plot command
-    ss << "plot \"" << inputMatFile << "\" matrix with image,";
+    // Plot sensor icons and titles
+    if (plotSensorIcons) {
+        int numOfLevels = std::stoi(acousticParams["numContourDepths"]),
+            numOptimalSenors = optimalSensors->rows() - projectedSensors;
+        Eigen::MatrixXd optimal = optimalSensors->block(0, 0,
+                                                  numOptimalSenors, 3);
+        Eigen::MatrixXd projected = optimalSensors->block(numOptimalSenors - 1,
+                                                     0, projectedSensors, 3);
+        // Define labels for sensors
+        addLabel(&ss, userSensors, sensorLabelColor);
+        addLabel(&ss, &optimal, sensorLabelColor);
+        addLabel(&ss, &projected, sensorLabelColor);
 
-    // add contour lines
-    for (i = 0; i  <  numOfLevels; i ++) {
-        ss << " \"" << contourDataFile << "\" index " << i  <<
-                " with line title \""  <<
-                (*contourLevels)[numOfLevels - i -1]  << "m\" ls " << i + 1  <<
-                ",";
-    }
-    // TODO(Greg)
-    /*
-    // add sensor icons
-     ss << "\'-\' using 1:2:3 with circles lc rgb \"" << sensorIconColor  <<
-           "\" fs solid title \"Sensors\"";
+        // plot command
+        ss << "plot \"" << inputMatFile << "\" matrix with image,\\";
 
-     // Specify each circle location as a triplet
-    for () {
-      	  //  circle format is x-loc y-loc radius
-    	 ss << ""
+        // Add contour lines
+        for (i = 0; i  <  numOfLevels; i ++) {
+            ss << "\n\"" << contourDataFile.c_str() << "\" index " << i <<
+                    " with line title \""  <<
+                    (*contourLevels)[numOfLevels - i -1]  << "m\" ls " <<
+                    i + 1  << ",\\";
+        }
+        // Add data ranges
+        ss << "\n";
+        addDataRange(&ss, userSensorIconColor, "User Sensor");
+        ss << ",\\\n";
+        addDataRange(&ss, optimalSensorIconColor, "Optimal Sensor");
+        ss << ",\\\n";
+        addDataRange(&ss, projectedSensorIconColor, "Projected Sensor");
+        ss << "\n";
+        // Enumerate points
+        enumeratePoints(&ss, userSensors, sensorIconRadius);
+        ss << "EOF\n";
+        enumeratePoints(&ss, &optimal, sensorIconRadius);
+        ss << "EOF\n";
+        enumeratePoints(&ss, &projected, sensorIconRadius);
+        ss << "EOF";
      }
-     */
 
     // finalize string
+    if (debug) {
+        std::cout << ss.str();
+    }
+
     plotData = ss.str();
     ss.str("");
     ss.clear();
@@ -219,6 +238,61 @@ void  Graph::printContourGraph(int width, int height,
 }
 
 /**
+ * Appends label definitions for each entry in sensors to a stringstream.
+ * @param ss A pointer to the stringstream object to append to.
+ * @param sensors A pointer to an Eigen matrix where each row represents a
+ *                sensor, the first column holds the sensor's row location, the
+ *                second column holds the sensor's col location.
+ * @param sensorLabelColor A string holding a color to paint the label text.
+ *                         See the GNUPlot manual for more info.
+ */
+void Graph::addLabel(std::stringstream* ss,  Eigen::MatrixXd* sensors,
+                     std::string sensorLabelColor) {
+    int i = 0;
+    // Define labels for sensors
+    for (i = 0; i < sensors->rows(); i ++) {
+        *ss << "set label \"" << i << "\" at " << (*sensors)(i, 0) << "," <<
+               (*sensors)(i, 1) << " front center tc rgb \"" <<
+               sensorLabelColor << "\"\n";
+    }
+}
+
+/**
+ * Appends data range definitions for each entry in sensors to a stringstream.
+ * @param ss A pointer to the stringstream object to append to.
+ * @param sensorIconColor A string holding the color to paint the sensor icons
+ *                        in this data range.  See the GNUPlot manual for more
+ *                        info.
+ * @param keyLabel A string holding the name of the data range.
+ *
+ */
+void Graph::addDataRange(std::stringstream* ss, std::string sensorIconColor,
+                         std::string keyLabel) {
+    *ss << " \'-\' using 1:2:3 with circles lc rgb \"" << sensorIconColor  <<
+          "\" fs solid title \"" << keyLabel << "\"";
+}
+
+/**
+ * Appends data point definitions for each entry in sensors to a stringstream.
+ * @param ss A pointer to the stringstream object to append to.
+ * @param sensors A pointer to an Eigen matrix where each row represents a
+ *                sensor, the first column holds the sensor's row location, the
+ *                second column holds the sensor's col location.
+ * @param iconRadius An integer holding the radius of the sensor icon.
+ */
+void Graph::enumeratePoints(std::stringstream* ss, Eigen::MatrixXd* sensors,
+                            int iconRadius) {
+    int i = 0;
+    // Specify each circle location as a triplet (row, col, radius)
+    for (i = 0; i  <  sensors->rows(); i ++) {
+          //  circle format is x-loc y-loc radius
+         *ss << " " << (*sensors)(i, 0) << " " << (*sensors)(i, 1) << " " <<
+                       iconRadius << "\n";
+     }
+}
+
+
+/**
  * Writes data in this object's grid to a text file as an ascii matrix (.mat)
  * separated by whitespace.
  */
@@ -250,8 +324,8 @@ void Graph::writeDat() {
         for (j = border; j < cols; j++) {
             val = temp(i, j);
             // Yes this is backwards.  No it's not an error.  THANKS GPUPlot...
-            out << std::setprecision(3) << j-border << " " << i-border << " " <<
-                    val << "\r\n";
+            out << std::setprecision(3) << j-border << " " << i-border <<
+                    " " << val << "\r\n";
         }
         out << "\r\n";
     }

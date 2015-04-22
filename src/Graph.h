@@ -7,7 +7,7 @@
 //============================================================================
 #ifndef SRC_GRAPH_H_
 #define SRC_GRAPH_H_
-#pragma once
+#include <Dense>
 #include <string>
 #include <vector>
 #include "GlobalVars.h"
@@ -28,10 +28,25 @@ class Graph {
     std::string contourDataFile;
     Grid* grid;
     explicit Graph(Grid* g);
+    void addDataRange(std::stringstream* ss, std::string sensorIconColor,
+                      std::string keyLabel);
+    void addLabel(std::stringstream* ss,  Eigen::MatrixXd* sensors,
+                  std::string sensorLabelColor);
+    void enumeratePoints(std::stringstream* ss, Eigen::MatrixXd* sensors,
+                         int iconRadius);
+    void plotSensors(Eigen::MatrixXd* sensors,
+                     std::vector <std::string> *contourLevels,
+                     std::string sensorLabelColor, std::string sensorIconColor,
+                     int iconRadius, std::string keyLabel,
+                     std::stringstream* ss, std::string inputMatFile,
+                     std::string contourDataFile);
     void printContour(std::vector<std::string> *contourLevels);
-    void  printContourGraph(int width, int height,
-             std::vector<std::string> *contourLevels,
-             bool logScaleGraphColoring);
+    void printContourGraph(int width, int height,
+            std::vector <std::string> *contourLevels,
+            bool plotSensors, Eigen::MatrixXd* userSensors,
+            Eigen::MatrixXd* optimalSensors,
+            int projectedSensors,
+            bool logScaleGraphColoring);
     void writeDat();
     void writeMat();
 };
