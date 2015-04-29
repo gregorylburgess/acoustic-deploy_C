@@ -60,7 +60,7 @@ int main() {
     int    startRow = 300,
            startCol = 200,  // 450,340,200,200 (1km)
            rowDist = 501,   // 100 0 800 1500 (5m)
-           colDist = 301,   //300 200 501 501
+           colDist = 301,   // 300 200 501 501 (palmyra)
            height = 1000,
            width = 1000,
            bias = 2,
@@ -94,8 +94,9 @@ int main() {
     for (i = 0; i < userSensorList.rows(); i ++) {
         row = std::stoi(userSensors[2 * i]);
         col = std::stoi(userSensors[2 * i + 1]);
-        if(row < 0 || col < 0 || row >= rowDist || col >= colDist) {
-            printError("A user-defined sensor is out of bounds.", 1, acousticParams["timestamp"]);
+        if (row < 0 || col < 0 || row >= rowDist || col >= colDist) {
+            printError("A user-defined sensor is out of bounds.", 1,
+                       acousticParams["timestamp"]);
         }
         // Translate user points to our internal grid
         userSensorList(i, 0) = row;
@@ -162,7 +163,8 @@ int main() {
 
     // Check if we should proceed...
     if (gGrid.data.sum() <= 0) {
-        printError("No Positive Coefficients found in the goodness Grid.  Aborting", 0, acousticParams["timestamp"]);
+        printError("No Positive Coefficients found in the goodness Grid." <<
+                   " Aborting", 0, acousticParams["timestamp"]);
     }
     vizEnd = clock();
     vizDelta = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
@@ -172,16 +174,12 @@ int main() {
     std::cout << "\nPlacing Sensors...\n";
     Eigen::MatrixXd bestSensors;
     bestSensors.resize(numOptimalSensors + numProjectedSensors, 3);
-    // Grab the top n sensor r,c locations and values.
 
+    // Grab the top n sensor r,c locations and values.
     selectTopSpots(&gGrid, &bestSensors, &userSensorList,
                    numOptimalSensors + numProjectedSensors,
                    sensorRange, peak, sd, acousticParams["timestamp"]);
-    //std::cout << bestSensors << "\n";
-    if(debug) {
-        std::cout << userSensorList << "\n\n";
-        std::cout<< bestSensors << "\n";
-    }
+    std::cout << bestSensors << "\n";
 
     // Generate graphs
     std::cout<< "\nWriting Graphs...";

@@ -12,6 +12,7 @@
 #include  <iostream>
 #include  <limits>
 #include  <set>
+#include <string>
 #include  <utility>
 #include  <vector>
 #include "GlobalVars.h"
@@ -196,7 +197,8 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
         printError("ERROR! Invalid bias value.", -2,
                     acousticParams["timestamp"]);
     }
-    goodnessGrid->data = goodnessGrid->data.unaryExpr(std::ptr_fun(validateZero));
+    goodnessGrid->data =
+            goodnessGrid->data.unaryExpr(std::ptr_fun(validateZero));
 }
 
 /**
@@ -773,18 +775,17 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
     }
 }
 
-void downWeigh(Grid* goodnessGrid, int row, int col, int sensorRange, Eigen::MatrixXd* suppressionGradient) {
+void downWeigh(Grid* goodnessGrid, int row, int col, int sensorRange,
+               Eigen::MatrixXd* suppressionGradient) {
     int size = suppressionGradient->rows();
     Eigen::MatrixXd temp;
     temp.resize(size, size);
-    row = std::max(border, row - sensorRange);
-    col = std::max(border, col - sensorRange);
     if (debug) {
         std::cout << "Blocking " << row << "," << col << " for " << size <<
                      " cells.\n";
     }
     // DownWeigh the chosen point
-    temp = goodnessGrid->data.block(row, col, size, size);
-    goodnessGrid->data.block(row, col, size, size) =
+    temp = goodnessGrid->data.block(row-border, col-border, size, size);
+    goodnessGrid->data.block(row-border, col-border, size, size) =
                                     temp.cwiseProduct(*suppressionGradient);
 }

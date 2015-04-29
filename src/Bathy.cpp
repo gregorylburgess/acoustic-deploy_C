@@ -43,7 +43,6 @@ double zero(double x) {
 double validateDepth(double x) {
     if (std::isnan(x) || std::isinf(x) || x == 0) {
         return -0.01;
-        //return 0;
     }
     return x;
 }
@@ -110,7 +109,8 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
     topographyGrid->data.block(border, border, numRows, numCols) =
                               temp.block(0, 0, numRows, numCols);
     // Ignore positive values.
-    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(validateDepth));
+    topographyGrid->data =
+            topographyGrid->data.unaryExpr(std::ptr_fun(validateDepth));
     topographyGrid->clearNA();
 }
 
@@ -274,7 +274,8 @@ void getBathy(Grid* topographyGrid, std::string inputFile,
                                static_cast<int>(numCols));
     }
     topographyGrid->clearNA();
-    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(validateDepth));
+    topographyGrid->data =
+            topographyGrid->data.unaryExpr(std::ptr_fun(validateDepth));
     if (acousticParams["debug"] == "1") {
         // topographyGrid->printData();
         std::cout << "startx " << startCol << "\nXDist: "<< numCols <<
