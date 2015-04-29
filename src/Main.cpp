@@ -34,7 +34,7 @@ int main() {
     acousticParams.insert({ "cellSize", "5" });
     acousticParams.insert({ "fishmodel", "0" });
     acousticParams.insert({ "sensorRange", "50" });
-    acousticParams.insert({ "userSensors", "100,100,200,200,100,200" });
+    acousticParams.insert({ "userSensors", "100,100,0,0,100,0,0,300" });
     acousticParams.insert({ "numOptimalSensors", "20" });
     acousticParams.insert({ "numProjectedSensors", "10" });
     acousticParams.insert({ "bias", "2" });
@@ -57,23 +57,25 @@ int main() {
     acousticParams.insert({ "timestamp", "-1" });
     acousticParams.insert({ "logScaleGraphColoring", "1" });
     acousticParams.insert({ "contourDepths", "0,-20,-40,-80" });
-    // TODO(Greg) Data validation
-    int    startRow = 100,
-           startCol = 0,  // 450,340,200,200 (1km)
-           RowDist = 300,   // 100 0 800 1500 (5m)
-           ColDist = 300,
+    int    startRow = 300,
+           startCol = 200,  // 450,340,200,200 (1km)
+           rowDist = 501,   // 100 0 800 1500 (5m)
+           colDist = 301,   //300 200 501 501
            height = 1000,
            width = 1000,
-           bias = 3,
+           bias = 2,
            sensorRange = 4,
-           peak = 1, sd = 1,
+           peak = 1,
+           sd = 1,
+           i = 0,
+           row = 0,
+           col = 0,
            cellSize = std::stoi(acousticParams["cellSize"]),
            numOptimalSensors =
                    std::stoi(acousticParams["numOptimalSensors"]),
            numProjectedSensors =
-                   std::stoi(acousticParams["numProjectedSensors"]),
-           i = 0;
-
+                   std::stoi(acousticParams["numProjectedSensors"]);
+           border = sensorRange;
     double ousdx     = std::stod(acousticParams["ousdx"]),
            ousdy     = std::stod(acousticParams["ousdy"]),
            oucor     = std::stod(acousticParams["oucor"]),
@@ -81,7 +83,26 @@ int main() {
            muy       = std::stod(acousticParams["muy"]),
            fishmodel = std::stod(acousticParams["fishmodel"]);
 
-    border = sensorRange;
+
+    // TODO(Greg) Data validation
+    // Parse User Sensor Placements
+    std::cout << "\nReading userSensor List...\n";
+    std::vector<std::string> userSensors;
+    parseCDString(&userSensors, acousticParams["userSensors"], ',');
+    Eigen::MatrixXd userSensorList;
+    userSensorList.resize(userSensors.size()/2, 3);
+    for (i = 0; i < userSensorList.rows(); i ++) {
+        row = std::stoi(userSensors[2 * i]);
+        col = std::stoi(userSensors[2 * i + 1]);
+        if(row < 0 || col < 0 || row >= rowDist || col >= colDist) {
+            printError("A user-defined sensor is out of bounds.", 1, acousticParams["timestamp"]);
+        }
+        // Translate user points to our internal grid
+        userSensorList(i, 0) = row;
+        userSensorList(i, 1) = col;
+    }
+
+
     clock_t begin, end, vizBegin, vizEnd;
     double vizDelta, timeSpent;
     begin = clock();
@@ -111,60 +132,62 @@ int main() {
            coverageFilePath = outputDataFilePath + coverageTitle +
                              outputDataFileType;
 
-    Grid bGrid(RowDist + 2 * border, ColDist + 2 * border, "Behavior");
-    Grid gGrid(RowDist + 2 * border, ColDist + 2 * border, "Goodness");
-    Grid tGrid(RowDist + 2 * border, ColDist + 2 * border, "Topography");
+    Grid bGrid(rowDist + 2 * border, colDist + 2 * border, "Behavior");
+    Grid gGrid(rowDist + 2 * border, colDist + 2 * border, "Goodness");
+    Grid tGrid(rowDist + 2 * border, colDist + 2 * border, "Topography");
     tGrid.data.setConstant(0);
+
     // Fetch or simulate topography
     std::cout << "Getting topography...";
     if (simulateBathy) {
         // Simulate topography
-        simulatetopographyGrid(&tGrid, RowDist, ColDist);
+        simulatetopographyGrid(&tGrid, rowDist, colDist);
     } else {
         // Fetch topography
         getBathy(&tGrid, acousticParams["inputFile"],
                  acousticParams["inputFileType"], size_t(startRow),
-                 size_t(startCol), size_t(RowDist), size_t(ColDist),
+                 size_t(startCol), size_t(rowDist), size_t(colDist),
                  acousticParams["seriesName"], acousticParams["timestamp"]);
     }
 
-    std::cout << "\nGetting Behavior...";
     // Fill in Behavior Grid
+    std::cout << "\nGetting Behavior...";
     populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy, oucor, mux,
                          muy, fishmodel);
     vizBegin = clock();
     std::cout << "\nGetting Goodness...\n";
+
     // Calculate good sensor locations
     calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, bias, sensorRange, peak, sd);
+
+    // Check if we should proceed...
+    if (gGrid.data.sum() <= 0) {
+        printError("No Positive Coefficients found in the goodness Grid.  Aborting", 0, acousticParams["timestamp"]);
+    }
     vizEnd = clock();
     vizDelta = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
 
+
+    // Find optimal placements
+    std::cout << "\nPlacing Sensors...\n";
+    Eigen::MatrixXd bestSensors;
+    bestSensors.resize(numOptimalSensors + numProjectedSensors, 3);
+    // Grab the top n sensor r,c locations and values.
+
+    selectTopSpots(&gGrid, &bestSensors, &userSensorList,
+                   numOptimalSensors + numProjectedSensors,
+                   sensorRange, peak, sd, acousticParams["timestamp"]);
+    //std::cout << bestSensors << "\n";
+    if(debug) {
+        std::cout << userSensorList << "\n\n";
+        std::cout<< bestSensors << "\n";
+    }
+
+    // Generate graphs
+    std::cout<< "\nWriting Graphs...";
     Graph gGraph = Graph(&gGrid);
     Graph tGraph = Graph(&tGrid);
     Graph bGraph = Graph(&bGrid);
-
-    std::cout << "\nReading userSensor List...\n";
-    // Parse User Sensor Placements
-    std::vector<std::string> userSensors;
-    parseCDString(&userSensors, acousticParams["userSensors"], ',');
-
-    std::cout << "\nPlacing Sensors...";
-    // Grab the top n sensor r,c locations and values.
-    Eigen::MatrixXd bestSensors;
-    Eigen::MatrixXd userSensorList;
-    bestSensors.resize(numOptimalSensors + numProjectedSensors, 3);
-    userSensorList.resize(userSensors.size()/2, 2);
-    for (i = 0; i < userSensorList.rows(); i ++) {
-        userSensorList(i, 0) = std::stoi(userSensors[2 * i]);
-        userSensorList(i, 1) = std::stoi(userSensors[2 * i + 1]);
-    }
-    selectTopSpots(&gGrid, &bestSensors, &userSensorList,
-                   numOptimalSensors + numProjectedSensors,
-                   sensorRange, peak, sd);
-
-    std::cout << bestSensors << "\n";
-    std::cout<< "\nWriting Graphs...";
-    // Generate graphs
     try {
         // Print the matrix & data files for Topography Grid
         tGraph.writeMat();

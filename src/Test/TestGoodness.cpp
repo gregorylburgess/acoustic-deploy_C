@@ -559,7 +559,7 @@ bool testSelectTopSpots() {
         selectTopSpots(goodnessGrid, &bestSensors[i], &userSensors[i],
                        numSensorsToPlace, sensorRange,
                        sensorPeakDetectionProbability,
-                       SDofSensorDetectionRange);
+                       SDofSensorDetectionRange, "-1");
 
         //std::cout<< "i:"<< i <<"\nGoodnessGrid:\n" << goodnessGrid->data <<"\n\n\nbestSensors:\n" <<bestSensors[i]<<"\n\n";
         result = result & compareMatrix(goodnessGrid->getDataPointer(), &solGoodnessGrid[i], "testSelectTopSpots-GoodnessGrid:" + std::to_string(i));

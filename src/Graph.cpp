@@ -100,7 +100,7 @@ void  Graph::printContourGraph(int width, int height,
                                 bool logScaleGraphColoring) {
     std::cout << "\n\nPrinting " << grid->name << " graph...\n";
     int i = 0,
-        sensorIconRadius = 4;
+        sensorIconRadius = 2;
     double  xstart = -.5,
             ystart = -.5;
     std::stringstream ss;
@@ -165,7 +165,7 @@ void  Graph::printContourGraph(int width, int height,
             numOptimalSenors = optimalSensors->rows() - projectedSensors;
         Eigen::MatrixXd optimal = optimalSensors->block(0, 0,
                                                   numOptimalSenors, 3);
-        Eigen::MatrixXd projected = optimalSensors->block(numOptimalSenors - 1,
+        Eigen::MatrixXd projected = optimalSensors->block(numOptimalSenors,
                                                      0, projectedSensors, 3);
         // Define labels for sensors
         addLabel(&ss, userSensors, sensorLabelColor);
@@ -251,8 +251,8 @@ void Graph::addLabel(std::stringstream* ss,  Eigen::MatrixXd* sensors,
     int i = 0;
     // Define labels for sensors
     for (i = 0; i < sensors->rows(); i ++) {
-        *ss << "set label \"" << i << "\" at " << (*sensors)(i, 0) << "," <<
-               (*sensors)(i, 1) << " front center tc rgb \"" <<
+        *ss << "set label \"" << i << "\" at " << (*sensors)(i, 1) << "," <<
+               (*sensors)(i, 0)<< " front center tc rgb \"" <<
                sensorLabelColor << "\"\n";
     }
 }
@@ -285,8 +285,8 @@ void Graph::enumeratePoints(std::stringstream* ss, Eigen::MatrixXd* sensors,
     int i = 0;
     // Specify each circle location as a triplet (row, col, radius)
     for (i = 0; i  <  sensors->rows(); i ++) {
-          //  circle format is x-loc y-loc radius
-         *ss << " " << (*sensors)(i, 0) << " " << (*sensors)(i, 1) << " " <<
+          //  circle format is x-loc y-loc radius; so transpose points.
+         *ss << " " << (*sensors)(i, 1) << " " << (*sensors)(i, 0) << " " <<
                        iconRadius << "\n";
      }
 }

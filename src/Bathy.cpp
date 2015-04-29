@@ -16,6 +16,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "Goodness.h"
 #include "Grid.h"
 #include "Utility.h"
 #include "GlobalVars.h"
@@ -32,6 +33,21 @@ double zero(double x) {
     }
     return x;
 }
+
+/**
+ * Returns -0.01 if a given double is nan, zero, or inf.
+ * A helper function to Eigen's unaryExpr() function.
+ * @param x The value to inspect.
+ * @return 1 if x is a nan or inf value, x otherwise.
+ */
+double validateDepth(double x) {
+    if (std::isnan(x) || std::isinf(x) || x == 0) {
+        return -0.01;
+        //return 0;
+    }
+    return x;
+}
+
 
 /**
  * A helper function that populates a std::vector of std::strings by splitting a std::string
@@ -94,7 +110,7 @@ void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
     topographyGrid->data.block(border, border, numRows, numCols) =
                               temp.block(0, 0, numRows, numCols);
     // Ignore positive values.
-    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(zero));
+    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(validateDepth));
     topographyGrid->clearNA();
 }
 
@@ -258,7 +274,7 @@ void getBathy(Grid* topographyGrid, std::string inputFile,
                                static_cast<int>(numCols));
     }
     topographyGrid->clearNA();
-    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(zero));
+    topographyGrid->data = topographyGrid->data.unaryExpr(std::ptr_fun(validateDepth));
     if (acousticParams["debug"] == "1") {
         // topographyGrid->printData();
         std::cout << "startx " << startCol << "\nXDist: "<< numCols <<

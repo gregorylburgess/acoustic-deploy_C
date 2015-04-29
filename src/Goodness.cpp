@@ -59,12 +59,13 @@ class sortByDist {
  * @param x The value to inspect.
  * @return 0 if x is a nan or inf value, x otherwise.
  */
-double validate(double x) {
+double validateZero(double x) {
     if (std::isnan(x) || std::isinf(x)) {
         return 0;
     }
     return x;
 }
+
 
 /**
  * Determines the value at point x on a normal distribution with a given sd.
@@ -195,6 +196,7 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
         printError("ERROR! Invalid bias value.", -2,
                     acousticParams["timestamp"]);
     }
+    goodnessGrid->data = goodnessGrid->data.unaryExpr(std::ptr_fun(validateZero));
 }
 
 /**
@@ -311,7 +313,7 @@ void goodViz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
             //  (which is 0)).
             if (c < lowerBorderRange || r < lowerBorderRange ||
                      r > upperRowRng || c > upperColRng) {
-                temp = temp.unaryExpr(std::ptr_fun(validate));
+                temp = temp.unaryExpr(std::ptr_fun(validateZero));
             }
             // sum the resulting goodness
             goodnessGrid->data(r, c) = temp.sum();
@@ -408,7 +410,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
 
             // Linear distribution model
             fishVisibility = visibilityMatrix.cwiseQuotient(localTopography);
-            fishVisibility.unaryExpr(std::ptr_fun(validate));
+            fishVisibility.unaryExpr(std::ptr_fun(validateZero));
 
 
             // Normal distribution model
@@ -440,7 +442,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                     }
                 }
                 // revalidate in case we divided by zero again...
-                fishVisibility.unaryExpr(std::ptr_fun(validate));
+                fishVisibility.unaryExpr(std::ptr_fun(validateZero));
             }
             // compute {probability of detection due to range} * {visible fish}
             temp = (*detectionGradient).cwiseProduct(fishVisibility).
@@ -450,7 +452,7 @@ void goodVizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
             // by the depth of a border cell (which is 0)).
             if (c < lowerBorderRange  ||  r < lowerBorderRange  ||
                     r > upperRowRng || c > upperColRng) {
-                temp = temp.unaryExpr(std::ptr_fun(validate));
+                temp = temp.unaryExpr(std::ptr_fun(validateZero));
             }
 
             // sum the resulting goodness
@@ -722,18 +724,18 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
  * @param SDofSensorDetectionRange The standard deviation of sensor range,
  *        determined by range testing.  Serves as a sigma value for the
  *        detection curve.
+ * @param timestamp A timestamp string for identifying related files.
  */
 void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
                     Eigen::MatrixXd* userSensors,
                     int numSensorsToPlace, int sensorRange,
                     double sensorPeakDetectionProbability,
-                    double SDofSensorDetectionRange) {
+                    double SDofSensorDetectionRange,
+                    std::string timestamp) {
     int row = 0, col = 0, i = 0,
         size = 2 * sensorRange + 1;
-    Eigen::MatrixXd temp;
     Eigen::MatrixXd suppressionGradient;
     Eigen::MatrixXd distanceGradient;
-    temp.resize(size, size);
     suppressionGradient.resize(size, size);
     distanceGradient.resize(size, size);
     makeDistGradient(&distanceGradient, sensorRange);
@@ -745,33 +747,44 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
 
     // DownWeigh all the user-specified sensor locations
     for (i = 0; i < userSensors->rows(); i++) {
-        row = (*userSensors)(i, 0);
-        col = (*userSensors)(i, 1);
-        if (debug) {
-            std::cout << "Blocking " << row - sensorRange << "," <<
-                         col - sensorRange << " for " << size << " cells.\n";
-        }
-        temp = goodnessGrid->data.block(row - sensorRange,
-                                        col - sensorRange,
-                                        size, size);
-        goodnessGrid->data.block(row - sensorRange, col - sensorRange,
-                                 size, size) =
-                                 temp.cwiseProduct(suppressionGradient);
+        // Translate user data to our internal grid
+        row = (*userSensors)(i, 0) + border;
+        col = (*userSensors)(i, 1) + border;
+
+        // Record the entry
+        (*userSensors)(i, 2) = goodnessGrid->data(row, col);
+
+        // DownWeigh the chosen point
+        downWeigh(goodnessGrid, row, col, sensorRange, &suppressionGradient);
     }
 
     // Select the top location in the goodness grid
     for (i = 0; i < numSensorsToPlace; i++) {
         // Find the max coefficient in the matrix
         goodnessGrid->data.maxCoeff(&row, &col);
-        // Record the entry
-        (*bestSensors)(i, 0) = row;
-        (*bestSensors)(i, 1) = col;
+
+        // Translate & record the entry
+        (*bestSensors)(i, 0) = row - border;
+        (*bestSensors)(i, 1) = col - border;
         (*bestSensors)(i, 2) = goodnessGrid->data(row, col);
+
         // DownWeigh the chosen point
-        temp = goodnessGrid->data.block(row - sensorRange, col - sensorRange,
-                                  size, size);
-        goodnessGrid->data.block(row - sensorRange, col - sensorRange,
-                                 size, size) =
-                                 temp.cwiseProduct(suppressionGradient);
+        downWeigh(goodnessGrid, row, col, sensorRange, &suppressionGradient);
     }
+}
+
+void downWeigh(Grid* goodnessGrid, int row, int col, int sensorRange, Eigen::MatrixXd* suppressionGradient) {
+    int size = suppressionGradient->rows();
+    Eigen::MatrixXd temp;
+    temp.resize(size, size);
+    row = std::max(border, row - sensorRange);
+    col = std::max(border, col - sensorRange);
+    if (debug) {
+        std::cout << "Blocking " << row << "," << col << " for " << size <<
+                     " cells.\n";
+    }
+    // DownWeigh the chosen point
+    temp = goodnessGrid->data.block(row, col, size, size);
+    goodnessGrid->data.block(row, col, size, size) =
+                                    temp.cwiseProduct(*suppressionGradient);
 }

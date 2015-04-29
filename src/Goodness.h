@@ -24,6 +24,7 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
                  int cStart, int rng);
 double cdist(double mean, double sd, double x);
 double cdistPartition(double mean, double sd, double start, double end);
+void downWeigh(Grid* goodnessGrid, int row, int col, int sensorRange, Eigen::MatrixXd* suppressionGradient);
 void goodFish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
               Eigen::MatrixXd* distanceGradient,
               Eigen::MatrixXd* detectionGradient, double sensorRange,
@@ -50,5 +51,6 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
                     Eigen::MatrixXd* userSensors,
                     int numSensorsToPlace, int sensorRange,
                     double sensorPeakDetectionProbability,
-                    double SDofSensorDetectionRange);
+                    double SDofSensorDetectionRange,
+                    std::string timestamp);
 #endif  // SRC_GOODNESS_H_
