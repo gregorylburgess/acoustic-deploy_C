@@ -480,7 +480,8 @@ bool testSelectTopSpots() {
         numSensorsToPlace = 3,
         i=0;
     double sensorPeakDetectionProbability = 1,
-           SDofSensorDetectionRange = 1;
+           SDofSensorDetectionRange = 1,
+           suppressionRangeFactor = 1;
     border = sensorRange;
     bool result = true;
     int size = 2 * (sensorRange + border) + 1;
@@ -558,6 +559,7 @@ bool testSelectTopSpots() {
         resetGoodnessGrid(goodnessGrid->getDataPointer());
         selectTopSpots(goodnessGrid, &bestSensors[i], &userSensors[i],
                        numSensorsToPlace, sensorRange,
+                       suppressionRangeFactor,
                        sensorPeakDetectionProbability,
                        SDofSensorDetectionRange, "-1");
 

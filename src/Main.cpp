@@ -34,6 +34,7 @@ int main() {
     acousticParams.insert({ "cellSize", "5" });
     acousticParams.insert({ "fishmodel", "0" });
     acousticParams.insert({ "sensorRange", "50" });
+    acousticParams.insert({ "suppressionRangeFactor","1"}),
     acousticParams.insert({ "userSensors", "100,100,0,0,100,0,0,300" });
     acousticParams.insert({ "numOptimalSensors", "20" });
     acousticParams.insert({ "numProjectedSensors", "10" });
@@ -63,7 +64,7 @@ int main() {
            colDist = 301,   // 300 200 501 501 (palmyra)
            height = 1000,
            width = 1000,
-           bias = 2,
+           bias = 3,
            sensorRange = 4,
            peak = 1,
            sd = 1,
@@ -76,7 +77,8 @@ int main() {
            numProjectedSensors =
                    std::stoi(acousticParams["numProjectedSensors"]);
            border = sensorRange;
-    double ousdx     = std::stod(acousticParams["ousdx"]),
+    double suppressionRangeFactor = std::stod(acousticParams["suppressionRangeFactor"]),
+           ousdx     = std::stod(acousticParams["ousdx"]),
            ousdy     = std::stod(acousticParams["ousdy"]),
            oucor     = std::stod(acousticParams["oucor"]),
            mux       = std::stod(acousticParams["mux"]),
@@ -163,8 +165,8 @@ int main() {
 
     // Check if we should proceed...
     if (gGrid.data.sum() <= 0) {
-        printError("No Positive Coefficients found in the goodness Grid." <<
-                   " Aborting", 0, acousticParams["timestamp"]);
+        printError("No positive coefficients found in the goodness Grid. Aborting",
+                0, acousticParams["timestamp"]);
     }
     vizEnd = clock();
     vizDelta = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
@@ -178,7 +180,9 @@ int main() {
     // Grab the top n sensor r,c locations and values.
     selectTopSpots(&gGrid, &bestSensors, &userSensorList,
                    numOptimalSensors + numProjectedSensors,
-                   sensorRange, peak, sd, acousticParams["timestamp"]);
+                   sensorRange, suppressionRangeFactor,
+                   peak, sd, acousticParams["timestamp"]);
+
     std::cout << bestSensors << "\n";
 
     // Generate graphs

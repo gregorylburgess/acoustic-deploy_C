@@ -731,6 +731,7 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
 void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
                     Eigen::MatrixXd* userSensors,
                     int numSensorsToPlace, int sensorRange,
+                    double suppressionRangeFactor,
                     double sensorPeakDetectionProbability,
                     double SDofSensorDetectionRange,
                     std::string timestamp) {
@@ -757,7 +758,8 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
         (*userSensors)(i, 2) = goodnessGrid->data(row, col);
 
         // DownWeigh the chosen point
-        downWeigh(goodnessGrid, row, col, sensorRange, &suppressionGradient);
+        suppress(goodnessGrid, row, col, sensorRange, suppressionRangeFactor,
+                 &suppressionGradient);
     }
 
     // Select the top location in the goodness grid
@@ -771,21 +773,34 @@ void selectTopSpots(Grid* goodnessGrid, Eigen::MatrixXd* bestSensors,
         (*bestSensors)(i, 2) = goodnessGrid->data(row, col);
 
         // DownWeigh the chosen point
-        downWeigh(goodnessGrid, row, col, sensorRange, &suppressionGradient);
+        suppress(goodnessGrid, row, col, sensorRange, suppressionRangeFactor,
+                 &suppressionGradient);
     }
 }
 
-void downWeigh(Grid* goodnessGrid, int row, int col, int sensorRange,
+void suppress(Grid* goodnessGrid, int row, int col, int sensorRange,
+               double suppressionRangeFactor,
                Eigen::MatrixXd* suppressionGradient) {
-    int size = suppressionGradient->rows();
+    int GRID_ROW_COUNT = goodnessGrid->data.rows(),
+        GRID_COL_COUNT = goodnessGrid->data.cols(),
+        size = ceil(suppressionGradient->rows() * suppressionRangeFactor),
+        startRow = std::max(row - sensorRange, 0),
+        startCol = std::max(col - sensorRange, 0),
+        rowDist = std::min(size, GRID_ROW_COUNT - startRow),
+        colDist = std::min(size, GRID_COL_COUNT - startCol);
     Eigen::MatrixXd temp;
     temp.resize(size, size);
     if (debug) {
-        std::cout << "Blocking " << row << "," << col << " for " << size <<
+        std::cout << "Blocking " << startRow << "," << startCol << " for " << rowDist << ", " << colDist <<
                      " cells.\n";
+        std::cout << "suppress sensor @ (" << row << "," << col <<
+                     ")\nsuppressionRangeFactor: " << suppressionRangeFactor<<
+                     "\nsize: " << size << "\nstartRow,startCol: " <<
+                     startRow << "," << startCol << "\nrowDist, colDist: " <<
+                     rowDist << "," << colDist << "\n";
     }
     // DownWeigh the chosen point
-    temp = goodnessGrid->data.block(row-border, col-border, size, size);
-    goodnessGrid->data.block(row-border, col-border, size, size) =
-                                    temp.cwiseProduct(*suppressionGradient);
+    temp.block(0, 0, rowDist, colDist) = goodnessGrid->data.block(startRow, startCol, rowDist, colDist);
+    goodnessGrid->data.block(startRow, startCol, rowDist, colDist) =
+                                    (temp.cwiseProduct(*suppressionGradient)).block(0, 0, rowDist, colDist);
 }

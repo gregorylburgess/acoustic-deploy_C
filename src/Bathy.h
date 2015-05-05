@@ -13,6 +13,7 @@
 #include "Utility.h"
 #include "GlobalVars.h"
 
+double deValidateDepth(double x);
 void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols);
 void getBathy(Grid* topographyGrid, std::string inputFile,
               std::string inputFileType, size_t startRow, size_t startCol,

@@ -21,7 +21,7 @@
 #include "Utility.h"
 #include "GlobalVars.h"
 #define _USE_MATH_DEFINES
-
+#define NA_REPLACEMENT_VAL -.0000001
 /**
  * Checks if x is positive, returning 1 if it is, and x otherwise.
  * @param x The value to inspect.
@@ -42,11 +42,17 @@ double zero(double x) {
  */
 double validateDepth(double x) {
     if (std::isnan(x) || std::isinf(x) || x == 0) {
-        return -0.01;
+        return NA_REPLACEMENT_VAL;
     }
     return x;
 }
 
+double deValidateDepth(double x) {
+    if (x == NA_REPLACEMENT_VAL) {
+        return 0;
+    }
+    return x;
+}
 
 /**
  * A helper function that populates a std::vector of std::strings by splitting a std::string
