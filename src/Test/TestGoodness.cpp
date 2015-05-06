@@ -66,7 +66,8 @@ bool checkCalculateGoodness() {
     Grid bGrid(numRows + 2 * border, numCols + 2 * border, "Behavior");
     Grid gGrid(numRows + 2 * border, numCols + 2 * border, "Goodness");
     Grid tGrid(numRows + 2 * border, numCols + 2 * border, "Topography");
-
+    Grid cGrid(numRows + 2 * border, numCols + 2 * border, "Coverage");
+    cGrid.data.setConstant(1);
     simulatetopographyGrid(&tGrid, numRows, numCols);
 
     //allocate solution array
@@ -138,7 +139,7 @@ bool checkCalculateGoodness() {
         for (fishmodel=0; fishmodel < 2; fishmodel++) {
             populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy,
                                   oucor, mux, muy, fishmodel);
-            calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, bias,
+            calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &cGrid, bias,
                                   range, peak, sd);
             //gGrid.printData();
             methodID = "checkCalculateGoodness bias:" + std::to_string(bias) + " fishmodel:" + std::to_string(fishmodel);
@@ -486,6 +487,9 @@ bool testSelectTopSpots() {
     bool result = true;
     int size = 2 * (sensorRange + border) + 1;
     Grid* goodnessGrid = new Grid(size, size,"goodness");
+    Grid* coverageGrid = new Grid(size, size,"coverage");
+    coverageGrid->data.resize(size,size);
+    coverageGrid->data.setConstant(1);
     Eigen::MatrixXd bestSensors[3];
     Eigen::MatrixXd userSensors[3];
     //userSensors[0].resize(2, 0);
@@ -557,7 +561,9 @@ bool testSelectTopSpots() {
             numSensorsToPlace = 3;
         }
         resetGoodnessGrid(goodnessGrid->getDataPointer());
-        selectTopSpots(goodnessGrid, &bestSensors[i], &userSensors[i],
+        Grid* perfectGoodnessGrid = new Grid(goodnessGrid, "perfectGoodnessGrid");
+        selectTopSpots(goodnessGrid, perfectGoodnessGrid, coverageGrid,
+                       &bestSensors[i], &userSensors[i],
                        numSensorsToPlace, sensorRange,
                        suppressionRangeFactor,
                        sensorPeakDetectionProbability,

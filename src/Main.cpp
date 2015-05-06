@@ -35,6 +35,7 @@ int main() {
     acousticParams.insert({ "fishmodel", "0" });
     acousticParams.insert({ "sensorRange", "50" });
     acousticParams.insert({ "suppressionRangeFactor","1"}),
+    acousticParams.insert({ "suppressionMethod","suppression.quick"}),
     acousticParams.insert({ "userSensors", "100,100,0,0,100,0,0,300" });
     acousticParams.insert({ "numOptimalSensors", "20" });
     acousticParams.insert({ "numProjectedSensors", "10" });
@@ -92,7 +93,7 @@ int main() {
     std::vector<std::string> userSensors;
     parseCDString(&userSensors, acousticParams["userSensors"], ',');
     Eigen::MatrixXd userSensorList;
-    userSensorList.resize(userSensors.size()/2, 3);
+    userSensorList.resize(userSensors.size()/2, 4);
     for (i = 0; i < userSensorList.rows(); i ++) {
         row = std::stoi(userSensors[2 * i]);
         col = std::stoi(userSensors[2 * i + 1]);
@@ -138,6 +139,7 @@ int main() {
     Grid bGrid(rowDist + 2 * border, colDist + 2 * border, "Behavior");
     Grid gGrid(rowDist + 2 * border, colDist + 2 * border, "Goodness");
     Grid tGrid(rowDist + 2 * border, colDist + 2 * border, "Topography");
+    Grid cGrid(rowDist + 2 * border, colDist + 2 * border, "Coverage");
     tGrid.data.setConstant(0);
 
     // Fetch or simulate topography
@@ -157,11 +159,16 @@ int main() {
     std::cout << "\nGetting Behavior...";
     populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy, oucor, mux,
                          muy, fishmodel);
+
+    // Initalize the Coverage Grid
+    cGrid.data.block(border,border,rowDist, colDist).setConstant(1);
+
+    // Mr. Gaeta, START THE CLOCK!
     vizBegin = clock();
     std::cout << "\nGetting Goodness...\n";
 
     // Calculate good sensor locations
-    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, bias, sensorRange, peak, sd);
+    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &cGrid, bias, sensorRange, peak, sd);
 
     // Check if we should proceed...
     if (gGrid.data.sum() <= 0) {
@@ -170,15 +177,16 @@ int main() {
     }
     vizEnd = clock();
     vizDelta = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
-
+    std::cout<<"copying grid";
+    Grid pGGrid(&gGrid, "PerfectGoodness");
 
     // Find optimal placements
     std::cout << "\nPlacing Sensors...\n";
     Eigen::MatrixXd bestSensors;
-    bestSensors.resize(numOptimalSensors + numProjectedSensors, 3);
+    bestSensors.resize(numOptimalSensors + numProjectedSensors, 4);
 
-    // Grab the top n sensor r,c locations and values.
-    selectTopSpots(&gGrid, &bestSensors, &userSensorList,
+    // Grab the top n sensor r,c locations and recovery rates.
+    selectTopSpots(&gGrid, &pGGrid, &cGrid, &bestSensors, &userSensorList,
                    numOptimalSensors + numProjectedSensors,
                    sensorRange, suppressionRangeFactor,
                    peak, sd, acousticParams["timestamp"]);

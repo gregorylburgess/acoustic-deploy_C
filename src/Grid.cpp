@@ -48,12 +48,11 @@ Grid::Grid(int Rows, int Cols, std::string Name) {
  * @param newName The name of the newly created Grid.  Used when writing files.
  */
 Grid::Grid(Grid* mat, std::string newName) {
-    Grid matrix = *mat;
-    rows = matrix.rows;
-    cols = matrix.cols;
+    rows = mat->rows;
+    cols = mat->cols;
+    data.resize(rows, cols);
     name = newName;
-    size_t size = sizeof(double) * matrix.rows * matrix.cols;
-    memcpy(&data, &matrix.data, size);
+    data.block(0,0,rows,cols) = mat->data.block(0,0,rows,cols);
 }
 
 /**
