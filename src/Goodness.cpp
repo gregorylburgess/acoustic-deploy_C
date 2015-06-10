@@ -717,7 +717,7 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
 
 
 /**
- * Selects the top n spots in the goodnesGrid, with the highest unique
+ * Selects the n cells in the goodnesGrid with the highest unique
  * detection probability, and returns a matrix containing the locations.
  * @param goodnessGrid The pre-computed goodnessGrid.
  * @param bestSensors A pointer to an empty Matrix, results will be dumped
@@ -740,11 +740,10 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
  *        be calculated.  If true, suppression is applied.  If false, the
  *        absoloute recovery rate is calculated, and no suppression is applied.
  */
-void selectTopSpots(Grid* goodnessGrid, Grid* goodnessGridPerfect, Grid* coverageGrid,
-                    Eigen::MatrixXd* bestSensors,
-                    Eigen::MatrixXd* userSensors,
-                    int numSensorsToPlace, int sensorRange,
-                    double suppressionRangeFactor,
+void selectTopSensorLocations(Grid* goodnessGrid, Grid* goodnessGridPerfect,
+                    Grid* coverageGrid, Eigen::MatrixXd* bestSensors,
+                    Eigen::MatrixXd* userSensors, int numSensorsToPlace,
+                    int sensorRange, double suppressionRangeFactor,
                     double sensorPeakDetectionProbability,
                     double SDofSensorDetectionRange,
                     std::string timeStamp) {
@@ -788,8 +787,10 @@ void selectTopSpots(Grid* goodnessGrid, Grid* goodnessGridPerfect, Grid* coverag
 
 
 
-void suppressionQuick(Grid* gridToSuppress, Grid* coverageGrid, Eigen::MatrixXd* suppressionGradient, int row, int col, int sensorRange,
-               int suppressionDiameter) {
+void suppressionQuick(Grid* gridToSuppress, Grid* coverageGrid,
+                      Eigen::MatrixXd* suppressionGradient,
+                      int row, int col, int sensorRange,
+                      int suppressionDiameter) {
     int GRID_ROW_COUNT = gridToSuppress->data.rows(),
         GRID_COL_COUNT = gridToSuppress->data.cols(),
         startRow = std::max(row - sensorRange, 0),
@@ -808,12 +809,14 @@ void suppressionQuick(Grid* gridToSuppress, Grid* coverageGrid, Eigen::MatrixXd*
                      "\n";
     }
     // Suppress the chosen point
-    temp.block(0, 0, rowDist, colDist) = gridToSuppress->data.block(startRow, startCol, rowDist, colDist);
+    temp.block(0, 0, rowDist, colDist) =
+            gridToSuppress->data.block(startRow, startCol, rowDist, colDist);
     gridToSuppress->data.block(startRow, startCol, rowDist, colDist) =
-                                    (temp.cwiseProduct(*suppressionGradient)).block(0, 0, rowDist, colDist);
+            (temp.cwiseProduct(*suppressionGradient)).block(0, 0, rowDist,
+            colDist);
 }
 
-
+// TODO(GREG) impliment bias options
 void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
                 Grid* goodnessGrid, Grid* coverageGrid, int bias, int row,
                 int col, int sensorRange, int suppressionDiameter,
@@ -821,12 +824,12 @@ void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
     // Do the right thing for the given bias.
     if (bias == 1 || bias == 3) {
         // Suppress the behavior Grid
-        // Recalculate the goodness of cells within suppressionDiameter+ 2* sensorRange
+        // Recalculate the goodness of cells within
+        // suppressionDiameter + 2 * sensorRange
     } else if (bias == 2) {
-        // Recalculate the goodness of cells within suppressDiameter + 2 @ sensorRange
-
-    }
-    else {
+        // Recalculate the goodness of cells within suppressDiameter +
+        // 2 * sensorRange
+    } else {
         // We should never normally hit this error
         std::string errorMsg = "Invalid bais given: " + std::to_string(bias) +
                                ". Valid values are between 1 and 3.";
@@ -835,16 +838,19 @@ void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
 }
 
 
-void suppress(Grid* goodnessGrid, Grid* coverageGrid, int row, int col, int sensorRange,
-              double suppressionRangeFactor, double sensorPeakDetectionProbability,
+void suppress(Grid* goodnessGrid, Grid* coverageGrid, int row, int col,
+              int sensorRange, double suppressionRangeFactor,
+              double sensorPeakDetectionProbability,
               double SDofSensorDetectionRange, std::string timeStamp) {
-        int size = ceil( (2 * sensorRange + 1) * suppressionRangeFactor);
-        if(acousticParams["suppressionMethod"] == "suppression.quick") {
+        int size = ceil((2 * sensorRange + 1) * suppressionRangeFactor);
+        if (acousticParams["suppressionMethod"] == "suppression.quick") {
             Eigen::MatrixXd suppressionGradient;
             Eigen::MatrixXd distanceGradient;
             suppressionGradient.resize(size, size);
             distanceGradient.resize(size, size);
             makeDistGradient(&distanceGradient, sensorRange);
+            // Since we're discounting the fish we can see, our detection
+            // gradient is the same as our suppression gradient.
             makeDetectionGradient(&suppressionGradient, &distanceGradient,
                                   sensorPeakDetectionProbability,
                                   SDofSensorDetectionRange);
@@ -852,8 +858,8 @@ void suppress(Grid* goodnessGrid, Grid* coverageGrid, int row, int col, int sens
             suppressionGradient.array() += sensorPeakDetectionProbability;
             suppressionQuick(goodnessGrid, coverageGrid, &suppressionGradient,
                             row, col, sensorRange, size);
-        } else if(acousticParams["suppressionMethod"] == "suppression.exact") {
-
+        } else if (acousticParams["suppressionMethod"] == "suppression.exact") {
+            // TODO(GREG) fill in
         } else {
             std::string errorMsg = "Invalid suppression method specified: "
                     + acousticParams["suppressionMethod"];
@@ -861,22 +867,89 @@ void suppress(Grid* goodnessGrid, Grid* coverageGrid, int row, int col, int sens
         }
 }
 
-/*void getStats(Grid* unsuppressedGoodnessGrid, Grid* suppressedGoodnessGrid,
-              double* delta, double* absRecoveryRate, Grid* coverageGrid,) {
-    // Compute absolute Recovery Rate.
+void getStats(Grid* unsuppressedGoodnessGrid, Grid* suppressedGoodnessGrid,
+              Eigen::MatrixXd* bestSensors, int sensorRange, double* sparsity,
+              double* absRecoveryRate, double* uniqueRecoveryRate,
+              Grid* coverageGrid) {
+    int i = 0, j = 0,
+        numSensors = bestSensors->rows(),
+        myR = 0, myC = 0,
+        newR = 0, newC = 0;
+    // =======================================================================
+    // ===================== Compute absolute Recovery Rate ==================
+    // =======================================================================
+    *absRecoveryRate = (*bestSensors).col(3).sum();
+    std::cout << "AbsRecoveryRate=" << *absRecoveryRate;
 
+    // =======================================================================
+    // ===================== Compute unique Recovery Rate ====================
+    // =======================================================================
+    *uniqueRecoveryRate = (*bestSensors).col(2).sum();
+    std::cout << "uniqueRecoveryRate=" << *uniqueRecoveryRate;
 
-    // Compute coverageGrid
-    coverageGrid->data = unsuppressedGoodnessGrid->data - suppressedGoodnessGrid->data;
+    // =======================================================================
+    // ===================== Compute Coverage Grid ===========================
+    // =======================================================================
+    coverageGrid->data = unsuppressedGoodnessGrid->data -
+                         suppressedGoodnessGrid->data;
 
-    // Compute sparsity (delta)
+    // ========================================================================
+    // ================ Compute Network Sparsity (delta) ======================
+    // ========================================================================
+    /* "Spatially, we calculate an absolute measure of station closeness, a, as
+     * the median of {a[1], . . . , a[n]}, where a[i] is the distance from
+     * station i to its nearest neighboring station.
+     * Network sparsity is then defined as a/(2*d_r)"
+     * - (Pedersen & Weng, 2013)
+     *
+     *  So, delta = median(distVec)/(2*params$detectionRange).
+     */
+
+    int midpoint = numSensors / 2;
+    double a = 0;
+    std::vector<double> minSensorDists;
+    Eigen::MatrixXd sensorDistMat;
+    Eigen::MatrixXd temp;
+
+    sensorDistMat.resize(numSensors, numSensors);
+    temp.resize(numSensors, numSensors);
+
+    // Compute the distance between sensor i and sensor j (given by the value
+    // at sensorDistMat(i,j). Given that sensorDistMat(i,j)==sensorDistMat(i,j),
+    // we need only perform compuations for the Matrix's upper triangle.
+    for (i = 0; i < numSensors; i ++) {
+        myR = (*bestSensors) (i, 0);
+        myC = (*bestSensors) (i, 1);
+        for (j = i + 1; j < numSensors; j ++) {
+            newR = (*bestSensors) (j, 0);
+            newC = (*bestSensors) (i, 1);
+            sensorDistMat(i, j) = sqrt(pow((myR - newR), 2) +
+                                  pow((myC - newC), 2));
+        }
+    }
+
+    // Create a transposition of the upper triangle (the lower triangle).
+    temp = sensorDistMat.transpose();
+    // Add the upper and lower triangles.
+    sensorDistMat += temp;
+    // Take the min of the rows to get the distance to the nearest neighbor for
+    // each sensor.
+    for (i = 0; i < numSensors; i ++) {
+        minSensorDists.push_back(sensorDistMat.row(i).minCoeff());
+    }
+
+    // Sort the min distances
+    sort(minSensorDists.begin(), minSensorDists.end());
+
+    // Take the median
+    if (numSensors % 2) {
+        a = minSensorDists[midpoint];
+    } else {
+        a = minSensorDists[midpoint - 1] + minSensorDists[midpoint];
+    }
+
+    // Finally!
+    *sparsity = a / static_cast<double>(2 * sensorRange);
+    std::cout << "sparsity=" << *sparsity;
 }
-delta
-absRecoveryRate - abs RR
 
-
-uniqRecoveryRate - total of list
-
-uniqRRs - list of unique RRs
-sensorMat - sorted sensor matrix
-}*/
