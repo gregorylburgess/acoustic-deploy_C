@@ -183,18 +183,15 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
 
     if (bias ==  1) {
         goodness_Fish(topographyGrid, behaviorGrid, goodnessGrid, coverageGrid,
-                &distanceGradient,
-                &detectionGradient, sensorRange,
+                &distanceGradient, &detectionGradient, sensorRange,
                 sensorPeakDetectionProbability, SDofSensorDetectionRange);
     } else if (bias ==  2) {
         goodness_Viz(topographyGrid, behaviorGrid, goodnessGrid,  coverageGrid,
-                &distanceGradient,
-                &detectionGradient, sensorRange,
+                &distanceGradient, &detectionGradient, sensorRange,
                 sensorPeakDetectionProbability, SDofSensorDetectionRange);
     } else if (bias ==  3) {
         goodness_VizOfFish(topographyGrid, behaviorGrid, goodnessGrid,
-                coverageGrid,
-                &distanceGradient, &detectionGradient, sensorRange,
+                coverageGrid, &distanceGradient, &detectionGradient, sensorRange,
                 sensorPeakDetectionProbability, SDofSensorDetectionRange);
     } else {
         printError("ERROR! Invalid bias value.", -2,
@@ -354,6 +351,10 @@ void goodness_Viz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
  *        determined by range testing.  Serves as a sigma value for the detection
  *        probability curve (a normal distribution).
  */
+// TODO(GREG) Abstract this to calculate goodness for a start point/ dist,
+//              then pass in  a pointer to catch the contents of the last calculation.
+//              This'll let us calculate visibility from single points (suppressionExact)
+//              and preserve the visibility grid.
 void goodness_VizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                     Grid* goodnessGrid, Grid* coverageGrid,
                     Eigen::MatrixXd* distanceGradient,
@@ -818,14 +819,43 @@ void suppressionQuick(Grid* gridToSuppress, Grid* coverageGrid,
             colDist);
 }
 
-// TODO(GREG) impliment bias options
+// TODO(GREG) implement bias options
 void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
                 Grid* goodnessGrid, Grid* coverageGrid, int bias, int row,
                 int col, int sensorRange, int suppressionDiameter,
                 std::string timeStamp) {
     // Do the right thing for the given bias.
-    if (bias == 1 || bias == 3) {
-        // Suppress the behavior Grid
+    if (bias == 1) {
+        // Ca
+    } else if (bias == 3) {
+        // Calculate specific visibility grid for cell (row,col)
+        // Subtract this from the behaviorGrid
+        // Call goodness_VizOfFish() function to update goodness for cells within sensor range of (row,col)
+
+        // Calculate affected indicies
+        int GRID_ROW_COUNT = gridToSuppress->data.rows(),
+                GRID_COL_COUNT = gridToSuppress->data.cols(),
+                startRow = std::max(row - sensorRange, 0),
+                startCol = std::max(col - sensorRange, 0),
+                rowDist = std::min(suppressionDiameter, GRID_ROW_COUNT - startRow),
+                colDist = std::min(suppressionDiameter, GRID_COL_COUNT - startCol);
+            Eigen::MatrixXd temp;
+            temp.resize(suppressionDiameter, suppressionDiameter);
+            if (debug) {
+                std::cout << "Blocking " << startRow << "," << startCol << " for " <<
+                             rowDist << ", " << colDist << " cells.\n" <<
+                             "suppress sensor @ (" << row << "," << col <<
+                             ")\nsuppressionDiameter: " << suppressionDiameter <<
+                             "\nstartRow,startCol: " << startRow << "," << startCol <<
+                             "\nrowDist, colDist: " << rowDist << "," << colDist <<
+                             "\n";
+            }
+            // Suppress the chosen point
+            temp.block(0, 0, rowDist, colDist) =
+                    gridToSuppress->data.block(startRow, startCol, rowDist, colDist);
+            behaviorGrid->data.block(startRow, startCol, rowDist, colDist) =
+                    (temp.cwiseProduct(*suppressionGradient)).block(0, 0, rowDist,
+                    colDist);
         // Recalculate the goodness of cells within
         // suppressionDiameter + 2 * sensorRange
     } else if (bias == 2) {
@@ -849,24 +879,22 @@ void suppress(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, Grid
         // small penalties.  Need to somehow scale up that curve to increase
         // the penalty at distance.
 
-        // Compute suppression gradient
         int suppressionDiameter = ceil((2 * sensorRange * suppressionRangeFactor + 1) );
-        Eigen::MatrixXd suppressionGradient;
-        Eigen::MatrixXd distanceGradient;
-        suppressionGradient.resize(suppressionDiameter, suppressionDiameter);
-        distanceGradient.resize(suppressionDiameter, suppressionDiameter);
-
-        makeDistGradient(&distanceGradient, sensorRange);
-        // Since we're discounting the fish we can see, our detection
-        // gradient is the same as our suppression gradient.
-        makeDetectionGradient(&suppressionGradient, &distanceGradient,
-                              sensorPeakDetectionProbability,
-                              SDofSensorDetectionRange);
-        suppressionGradient.array() *= -1;
-        suppressionGradient.array() += sensorPeakDetectionProbability;
-
         if (acousticParams["suppressionMethod"] == "suppression.quick") {
+            // Compute suppression gradient
+            Eigen::MatrixXd suppressionGradient;
+            Eigen::MatrixXd distanceGradient;
+            suppressionGradient.resize(suppressionDiameter, suppressionDiameter);
+            distanceGradient.resize(suppressionDiameter, suppressionDiameter);
 
+            makeDistGradient(&distanceGradient, sensorRange);
+            // Since we're discounting the fish we can see, our detection
+            // gradient is the same as our suppression gradient.
+            makeDetectionGradient(&suppressionGradient, &distanceGradient,
+                                  sensorPeakDetectionProbability,
+                                  SDofSensorDetectionRange);
+            suppressionGradient.array() *= -1;
+            suppressionGradient.array() += sensorPeakDetectionProbability;
             suppressionQuick(goodnessGrid, coverageGrid, &suppressionGradient,
                             row, col, sensorRange, suppressionDiameter);
         } else if (acousticParams["suppressionMethod"] == "suppression.exact") {
