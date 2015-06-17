@@ -740,10 +740,10 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
  *        be calculated.  If true, suppression is applied.  If false, the
  *        absoloute recovery rate is calculated, and no suppression is applied.
  */
-void selectTopSensorLocations(Grid* goodnessGrid, Grid* goodnessGridPerfect,
+void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, Grid* goodnessGridPerfect,
                     Grid* coverageGrid, Eigen::MatrixXd* bestSensors,
                     Eigen::MatrixXd* userSensors, int numSensorsToPlace,
-                    int sensorRange, double suppressionRangeFactor,
+                    int sensorRange, int bias, double suppressionRangeFactor,
                     double sensorPeakDetectionProbability,
                     double SDofSensorDetectionRange,
                     std::string timeStamp) {
@@ -760,9 +760,10 @@ void selectTopSensorLocations(Grid* goodnessGrid, Grid* goodnessGridPerfect,
         // Record the Absolute Recovery Rate
         (*userSensors)(i, 3) = goodnessGridPerfect->data(row, col);
         // Suppress the chosen point
-        suppress(goodnessGrid, coverageGrid, row, col, sensorRange,
-                suppressionRangeFactor, sensorPeakDetectionProbability,
+        suppress(topographyGrid, behaviorGrid, goodnessGrid, coverageGrid, row, col, sensorRange,
+                bias, suppressionRangeFactor, sensorPeakDetectionProbability,
                 SDofSensorDetectionRange, timeStamp);
+
     }
 
     // Select and process the top location in the goodness grid
@@ -779,9 +780,10 @@ void selectTopSensorLocations(Grid* goodnessGrid, Grid* goodnessGridPerfect,
        // Record the Absolute Recovery Rate
         (*bestSensors)(i, 3) = goodnessGridPerfect->data(row, col);
         // Suppress the chosen point
-        suppress(goodnessGrid, coverageGrid, row, col, sensorRange,
-                suppressionRangeFactor, sensorPeakDetectionProbability,
-                SDofSensorDetectionRange, timeStamp);
+        suppress(topographyGrid, behaviorGrid, goodnessGrid, coverageGrid, row, col,
+                sensorRange, bias, suppressionRangeFactor,
+                sensorPeakDetectionProbability, SDofSensorDetectionRange,
+                timeStamp);
     }
 }
 
@@ -838,28 +840,41 @@ void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
 }
 
 
-void suppress(Grid* goodnessGrid, Grid* coverageGrid, int row, int col,
-              int sensorRange, double suppressionRangeFactor,
+void suppress(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid, Grid* coverageGrid, int row, int col,
+              int sensorRange, int bias, double suppressionRangeFactor,
               double sensorPeakDetectionProbability,
               double SDofSensorDetectionRange, std::string timeStamp) {
-        int size = ceil((2 * sensorRange + 1) * suppressionRangeFactor);
+        // TODO(GREG) suppression range factor does nothing, bc at large dist,
+        // the exponential dropoff of the detection function results in very
+        // small penalties.  Need to somehow scale up that curve to increase
+        // the penalty at distance.
+
+        // Compute suppression gradient
+        int suppressionDiameter = ceil((2 * sensorRange * suppressionRangeFactor + 1) );
+        Eigen::MatrixXd suppressionGradient;
+        Eigen::MatrixXd distanceGradient;
+        suppressionGradient.resize(suppressionDiameter, suppressionDiameter);
+        distanceGradient.resize(suppressionDiameter, suppressionDiameter);
+
+        makeDistGradient(&distanceGradient, sensorRange);
+        // Since we're discounting the fish we can see, our detection
+        // gradient is the same as our suppression gradient.
+        makeDetectionGradient(&suppressionGradient, &distanceGradient,
+                              sensorPeakDetectionProbability,
+                              SDofSensorDetectionRange);
+        suppressionGradient.array() *= -1;
+        suppressionGradient.array() += sensorPeakDetectionProbability;
+
         if (acousticParams["suppressionMethod"] == "suppression.quick") {
-            Eigen::MatrixXd suppressionGradient;
-            Eigen::MatrixXd distanceGradient;
-            suppressionGradient.resize(size, size);
-            distanceGradient.resize(size, size);
-            makeDistGradient(&distanceGradient, sensorRange);
-            // Since we're discounting the fish we can see, our detection
-            // gradient is the same as our suppression gradient.
-            makeDetectionGradient(&suppressionGradient, &distanceGradient,
-                                  sensorPeakDetectionProbability,
-                                  SDofSensorDetectionRange);
-            suppressionGradient.array() *= -1;
-            suppressionGradient.array() += sensorPeakDetectionProbability;
+
             suppressionQuick(goodnessGrid, coverageGrid, &suppressionGradient,
-                            row, col, sensorRange, size);
+                            row, col, sensorRange, suppressionDiameter);
         } else if (acousticParams["suppressionMethod"] == "suppression.exact") {
             // TODO(GREG) fill in
+            suppressionExact(behaviorGrid, topographyGrid, goodnessGrid,
+                    coverageGrid, bias, row, col, sensorRange,
+                    suppressionDiameter, timeStamp);
+
         } else {
             std::string errorMsg = "Invalid suppression method specified: "
                     + acousticParams["suppressionMethod"];

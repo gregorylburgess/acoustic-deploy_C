@@ -479,7 +479,7 @@ void resetGoodnessGrid (Eigen::MatrixXd* grid) {
 bool testSelectTopSpots() {
     int sensorRange = 2,
         numSensorsToPlace = 3,
-        i=0;
+        i=0, bias = 1;
     double sensorPeakDetectionProbability = 1,
            SDofSensorDetectionRange = 1,
            suppressionRangeFactor = 1;
@@ -488,8 +488,11 @@ bool testSelectTopSpots() {
     int size = 2 * (sensorRange + border) + 1;
     Grid* goodnessGrid = new Grid(size, size,"goodness");
     Grid* coverageGrid = new Grid(size, size,"coverage");
+    Grid* behaviorGrid = new Grid(size, size, "behavior");
+    Grid* topographyGrid = new Grid(size, size, "topography");
     coverageGrid->data.resize(size,size);
     coverageGrid->data.setConstant(1);
+    simulatetopographyGrid(topographyGrid, sensorRange, sensorRange);
     Eigen::MatrixXd bestSensors[3];
     Eigen::MatrixXd userSensors[3];
     //userSensors[0].resize(2, 0);
@@ -562,9 +565,10 @@ bool testSelectTopSpots() {
         }
         resetGoodnessGrid(goodnessGrid->getDataPointer());
         Grid* perfectGoodnessGrid = new Grid(goodnessGrid, "perfectGoodnessGrid");
-        selectTopSpots(goodnessGrid, perfectGoodnessGrid, coverageGrid,
+        // TODO(GREG) fill in behaviorGrid and test with suppression.exact and suppression.quick
+        selectTopSensorLocations(topographyGrid, behaviorGrid, goodnessGrid, perfectGoodnessGrid, coverageGrid,
                        &bestSensors[i], &userSensors[i],
-                       numSensorsToPlace, sensorRange,
+                       numSensorsToPlace, sensorRange, bias,
                        suppressionRangeFactor,
                        sensorPeakDetectionProbability,
                        SDofSensorDetectionRange, "-1");

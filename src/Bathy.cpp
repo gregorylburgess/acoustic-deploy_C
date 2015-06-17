@@ -87,8 +87,8 @@ std::vector<std::string> split(std::string *str, char delim) {
  * topographic data is available.  Results are dumped into topographyGrid.
  * @param topographyGrid A pointer to a zero-initialized Grid of size
  * numRows x numCols.
- * @param numRows The desired number of rows in the resuliting matrix.
- * @param numCols The desired number of cols in the resulting matrix.
+ * @param numRows The desired number of non-border rows in the resulting matrix.
+ * @param numCols The desired number of non-border cols in the resulting matrix.
  */
 void simulatetopographyGrid(Grid* topographyGrid, int numRows, int numCols) {
     Eigen::VectorXd refx = refx.LinSpaced(numCols, -2*M_PI, 2*M_PI);

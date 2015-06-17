@@ -15,8 +15,8 @@
 #include "Grid.h"
 #include "Utility.h"
 void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
-                        Grid* goodnessGrid, Grid* coverageGrid, int bias, int range,
-                        double peak, double sd);
+                        Grid* goodnessGrid, Grid* coverageGrid, int bias,
+                        int range, double peak, double sd);
 std::vector<std::pair<int, int>> getCells(const std::pair <int, int> *origin,
                         const std::pair <int, int> *target);
 void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
@@ -25,8 +25,12 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
                         int rStart, int cStart, int rng);
 double cdist(double mean, double sd, double x);
 double cdistPartition(double mean, double sd, double start, double end);
-void goodness_Fish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
-                        Grid* coverageGrid,
+void getStats(Grid* unsuppressedGoodnessGrid, Grid* suppressedGoodnessGrid,
+                        Eigen::MatrixXd* bestSensors, int sensorRange,
+                        double* sparsity, double* absRecoveryRate,
+                        double* uniqueRecoveryRate, Grid* coverageGrid);
+void goodness_Fish(Grid* topographyGrid, Grid* behaviorGrid,
+                        Grid* goodnessGrid, Grid* coverageGrid,
                         Eigen::MatrixXd* distanceGradient,
                         Eigen::MatrixXd* detectionGradient, int sensorRange,
                         double sensorPeakDetectionProbability,
@@ -50,23 +54,24 @@ void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
 void makeDistGradient(Eigen::MatrixXd* distGradient, int rng);
 double normalProb(double peak, double sd, double x);
 std::pair<int, int> offset(const std::pair<int, int> *point);
-void selectTopSpots(Grid* goodnessGrid, Grid* goodnessGridPerfect, Grid* coverageGrid,
-                        Eigen::MatrixXd* bestSensors,
+void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
+                        Grid* goodnessGridPerfect,
+                        Grid* coverageGrid, Eigen::MatrixXd* bestSensors,
                         Eigen::MatrixXd* userSensors,
-                        int numSensorsToPlace, int sensorRange,
-                        double suppressionRangeFactor,
+                        int numSensorsToPlace,
+                        int sensorRange, int bias, double suppressionRangeFactor,
                         double sensorPeakDetectionProbability,
                         double SDofSensorDetectionRange,
                         std::string timeStamp);
-void suppress(Grid* goodnessGrid, Grid* coverageGrid, int row, int col,
-                        int sensorRange, double suppressionRangeFactor,
+void suppress(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
+                        Grid* coverageGrid, int row, int col,
+                        int sensorRange, int bias, double suppressionRangeFactor,
                         double sensorPeakDetectionProbability,
-                        double SDofSensorDetectionRange,
-                        std::string timeStamp);
-void suppressionExact(Grid* gridToSuppress, Grid* coverageGrid,
-                        Eigen::MatrixXd* suppressionGradient, int row, int col,
-                        int sensorRange, int suppressionDiameter,
-                        std::string timeStamp);
+                        double SDofSensorDetectionRange, std::string timeStamp);
+void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
+                        Grid* goodnessGrid, Grid* coverageGrid, int bias,
+                        int row, int col, int sensorRange,
+                        int suppressionDiameter, std::string timeStamp);
 void suppressionQuick(Grid* gridToSuppress, Grid* coverageGrid,
                         Eigen::MatrixXd* suppressionGradient, int row, int col,
                         int sensorRange, int suppressionDiameter);

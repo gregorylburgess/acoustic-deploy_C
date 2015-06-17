@@ -17,10 +17,10 @@
 #include "GlobalVars.h"
 #include "Goodness.h"
 #include "Graph.h"
-#include "Utility.h"
 #include "Test/Test.h"
 #include "Test/TestGoodness.h"
 
+#include "Utility.h"
 int main() {
     bool test = false, simulateBathy = false;
 
@@ -66,6 +66,7 @@ int main() {
            width = 1000,
            bias = 3,
            sensorRange = 16,
+           // sensorRangeSD = 1,
            peak = 1,
            sd = 1,
            i = 0,
@@ -192,9 +193,9 @@ int main() {
     bestSensors.resize(numOptimalSensors + numProjectedSensors, 4);
 
     // Grab the top n sensor r,c locations and recovery rates.
-    selectTopSensorLocations(&gGrid, &UGGrid, &cGrid, &bestSensors,
+    selectTopSensorLocations(&tGrid, &bGrid, &gGrid, &UGGrid, &cGrid, &bestSensors,
                    &userSensorList, numOptimalSensors + numProjectedSensors,
-                   sensorRange, suppressionRangeFactor, peak, sd,
+                   sensorRange, bias, suppressionRangeFactor, peak, sd,
                    acousticParams["timestamp"]);
 
     std::cout << bestSensors << "\n";
