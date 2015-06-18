@@ -65,10 +65,11 @@ int main() {
            height = 1000,
            width = 1000,
            bias = 3,
-           sensorRange = 16,
+           sensorDetectionRange = 4,
+           sensorDetectionDiameter = 2 * sensorDetectionRange + 1,
            // sensorRangeSD = 1,
-           peak = 1,
-           sd = 1,
+           sensorPeakDetectionProbability = 1,
+           SDofSensorDetectionRange = 1,
            i = 0,
            row = 0,
            col = 0,
@@ -77,7 +78,7 @@ int main() {
                    std::stoi(acousticParams["numOptimalSensors"]),
            numProjectedSensors =
                    std::stoi(acousticParams["numProjectedSensors"]);
-           border = sensorRange;
+           border = sensorDetectionRange;
     double suppressionRangeFactor =
                        std::stod(acousticParams["suppressionRangeFactor"]),
            ousdx     = std::stod(acousticParams["ousdx"]),
@@ -172,11 +173,26 @@ int main() {
     vizBegin = clock();
     std::cout << "\nGetting Goodness...\n";
 
+    Eigen::MatrixXd distanceGradient;
+    Eigen::MatrixXd detectionGradient;
+    distanceGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    distanceGradient.setConstant(0);
+    detectionGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    detectionGradient.setConstant(0);
+    // Create a gradient of distances to avoid redundant computation
+    makeDistGradient(&distanceGradient, sensorDetectionRange);
+    // Create a gradient of probability of detection (due to sensorRange) to
+    // avoid redundant computation
+    makeDetectionGradient(&detectionGradient, & distanceGradient,
+                   sensorPeakDetectionProbability, SDofSensorDetectionRange);
+
     // Calculate good sensor locations
-    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &suppressionReference, bias,
-                        sensorRange, border, border,
+    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &detectionGradient,
+                        &distanceGradient, &suppressionReference, bias,
+                        sensorDetectionRange, border, border,
                         rowDist, colDist,
-                        peak, sd);
+                        sensorPeakDetectionProbability,
+                        SDofSensorDetectionRange);
 
     // Check if we should proceed...
     if (gGrid.data.sum() <= 0) {
@@ -196,15 +212,18 @@ int main() {
     bestSensors.resize(numOptimalSensors + numProjectedSensors, 4);
 
     // Grab the top n sensor r,c locations and recovery rates.
-    selectTopSensorLocations(&tGrid, &bGrid, &gGrid, &UGGrid, &cGrid, &bestSensors,
-                   &userSensorList, numOptimalSensors + numProjectedSensors,
-                   sensorRange, bias, suppressionRangeFactor, peak, sd,
+    selectTopSensorLocations(&tGrid, &bGrid, &gGrid, &UGGrid,
+                   &bestSensors, &userSensorList, &suppressionReference,
+                   &detectionGradient, &distanceGradient,
+                   numOptimalSensors + numProjectedSensors,
+                   sensorDetectionRange, bias, suppressionRangeFactor,
+                   sensorPeakDetectionProbability, SDofSensorDetectionRange,
                    acousticParams["timestamp"]);
 
     std::cout << bestSensors << "\n";
 
     std::cout << "Computing Statistics...\n";
-    getStats(&UGGrid, &gGrid, &bestSensors, sensorRange, &networkSparsity,
+    getStats(&UGGrid, &gGrid, &bestSensors, sensorDetectionRange, &networkSparsity,
               &absRecoveryRate, &uniqueRecoveryRate, &cGrid);
 
     // Generate graphs

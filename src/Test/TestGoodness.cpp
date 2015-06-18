@@ -47,13 +47,14 @@ bool runGoodnessTests() {
 bool checkCalculateGoodness() {
     int numRows = 5,
         numCols = 5,
-        range = 2,
+        sensorDetectionRange = 2,
+        sensorDetectionDiameter = 2 * sensorDetectionRange + 1,
         cellSize = 5,
         fishmodel = 0,
         bias = 0,
         i = 0;
-    double peak = 1,
-           sd = 1,
+    double sensorPeakDetectionProbability = 1,
+           SDofSensorDetectionRange = 1,
            ousdx = 0.9,
            ousdy = 0.9,
            oucor = 0,
@@ -62,14 +63,25 @@ bool checkCalculateGoodness() {
     bool result = true;
     std::string methodID;
 
-    border = range;
+    border = sensorDetectionRange;
     Grid bGrid(numRows + 2 * border, numCols + 2 * border, "Behavior");
     Grid gGrid(numRows + 2 * border, numCols + 2 * border, "Goodness");
     Grid tGrid(numRows + 2 * border, numCols + 2 * border, "Topography");
     Grid cGrid(numRows + 2 * border, numCols + 2 * border, "Coverage");
     cGrid.data.setConstant(1);
     simulatetopographyGrid(&tGrid, numRows, numCols);
-
+    Eigen::MatrixXd distanceGradient;
+    Eigen::MatrixXd detectionGradient;
+    distanceGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    distanceGradient.setConstant(0);
+    detectionGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    detectionGradient.setConstant(0);
+    // Create a gradient of distances to avoid redundant computation
+    makeDistGradient(&distanceGradient, sensorDetectionRange);
+    // Create a gradient of probability of detection (due to sensorRange) to
+    // avoid redundant computation
+    makeDetectionGradient(&detectionGradient, & distanceGradient,
+                sensorPeakDetectionProbability, SDofSensorDetectionRange);
     Eigen::MatrixXd suppressionReference;
     //allocate solution array
     Eigen::MatrixXd sols[6];
@@ -141,9 +153,12 @@ bool checkCalculateGoodness() {
             populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy,
                                   oucor, mux, muy, fishmodel);
             calculateGoodnessGrid(&tGrid, &bGrid, &gGrid,
-                                  &suppressionReference, bias,
-                                  range, range, range,
-                                  numRows, numCols,peak, sd);
+                                  &suppressionReference, &detectionGradient,
+                                  &distanceGradient, bias,
+                                  sensorDetectionRange, sensorDetectionRange,
+                                  sensorDetectionRange, numRows, numCols,
+                                  sensorPeakDetectionProbability,
+                                  SDofSensorDetectionRange);
             //gGrid.printData();
             methodID = "checkCalculateGoodness bias:" + std::to_string(bias) + " fishmodel:" + std::to_string(fishmodel);
             result = result & compareMatrix(&gGrid.data, &sols[(bias-1) * 2 + fishmodel], methodID);
@@ -480,22 +495,24 @@ void resetGoodnessGrid (Eigen::MatrixXd* grid) {
  * Tests selectTopSpots().
  */
 bool testSelectTopSpots() {
-    int sensorRange = 2,
+    int sensorDetectionRange = 2,
+        sensorDetectionDiameter = sensorDetectionRange * 2 + 1,
         numSensorsToPlace = 3,
         i=0, bias = 1;
     double sensorPeakDetectionProbability = 1,
            SDofSensorDetectionRange = 1,
            suppressionRangeFactor = 1;
-    border = sensorRange;
+    border = sensorDetectionRange;
     bool result = true;
-    int size = 2 * (sensorRange + border) + 1;
+    int size = 2 * (sensorDetectionRange + border) + 1;
     Grid* goodnessGrid = new Grid(size, size,"goodness");
     Grid* coverageGrid = new Grid(size, size,"coverage");
     Grid* behaviorGrid = new Grid(size, size, "behavior");
     Grid* topographyGrid = new Grid(size, size, "topography");
     coverageGrid->data.resize(size,size);
     coverageGrid->data.setConstant(1);
-    simulatetopographyGrid(topographyGrid, sensorRange, sensorRange);
+    simulatetopographyGrid(topographyGrid, sensorDetectionRange, sensorDetectionRange);
+    Eigen::MatrixXd suppressionReference;
     Eigen::MatrixXd bestSensors[3];
     Eigen::MatrixXd userSensors[3];
     //userSensors[0].resize(2, 0);
@@ -505,6 +522,18 @@ bool testSelectTopSpots() {
     userSensors[2].resize(2, 2);
     userSensors[2] << 5, 3,
                       2, 4;
+    Eigen::MatrixXd distanceGradient;
+    Eigen::MatrixXd detectionGradient;
+    distanceGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    distanceGradient.setConstant(0);
+    detectionGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    detectionGradient.setConstant(0);
+    // Create a gradient of distances to avoid redundant computation
+    makeDistGradient(&distanceGradient, sensorDetectionRange);
+    // Create a gradient of probability of detection (due to sensorRange) to
+    // avoid redundant computation
+    makeDetectionGradient(&detectionGradient, & distanceGradient,
+                sensorPeakDetectionProbability, SDofSensorDetectionRange);
     // Solutions
     Eigen::MatrixXd solGoodnessGrid[3];
     Eigen::MatrixXd solBestSensors[3];
@@ -569,13 +598,16 @@ bool testSelectTopSpots() {
         resetGoodnessGrid(goodnessGrid->getDataPointer());
         Grid* perfectGoodnessGrid = new Grid(goodnessGrid, "perfectGoodnessGrid");
         // TODO(GREG) fill in behaviorGrid and test with suppression.exact and suppression.quick
-        selectTopSensorLocations(topographyGrid, behaviorGrid, goodnessGrid, perfectGoodnessGrid, coverageGrid,
+
+        selectTopSensorLocations(topographyGrid, behaviorGrid, goodnessGrid,
+                       perfectGoodnessGrid,
                        &bestSensors[i], &userSensors[i],
-                       numSensorsToPlace, sensorRange, bias,
+                       &suppressionReference,
+                       &detectionGradient, &distanceGradient,
+                       numSensorsToPlace, sensorDetectionRange, bias,
                        suppressionRangeFactor,
                        sensorPeakDetectionProbability,
                        SDofSensorDetectionRange, "-1");
-
         //std::cout<< "i:"<< i <<"\nGoodnessGrid:\n" << goodnessGrid->data <<"\n\n\nbestSensors:\n" <<bestSensors[i]<<"\n\n";
         result = result & compareMatrix(goodnessGrid->getDataPointer(), &solGoodnessGrid[i], "testSelectTopSpots-GoodnessGrid:" + std::to_string(i));
         result = result & compareMatrix(&bestSensors[i], &solBestSensors[i], "testSelectTopSpots-BestSensors:" + std::to_string(i));
