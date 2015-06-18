@@ -145,6 +145,7 @@ int main() {
     Grid tGrid(rowDist + 2 * border, colDist + 2 * border, "Topography");
     Grid cGrid(rowDist + 2 * border, colDist + 2 * border, "Coverage");
     tGrid.data.setConstant(0);
+    Eigen::MatrixXd suppressionReference;
 
     // Fetch or simulate topography
     std::cout << "Getting topography...";
@@ -172,8 +173,10 @@ int main() {
     std::cout << "\nGetting Goodness...\n";
 
     // Calculate good sensor locations
-    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &cGrid, bias, sensorRange,
-                          peak, sd);
+    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &suppressionReference, bias,
+                        sensorRange, border, border,
+                        rowDist, colDist,
+                        peak, sd);
 
     // Check if we should proceed...
     if (gGrid.data.sum() <= 0) {

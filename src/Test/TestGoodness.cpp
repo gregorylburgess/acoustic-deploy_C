@@ -70,6 +70,7 @@ bool checkCalculateGoodness() {
     cGrid.data.setConstant(1);
     simulatetopographyGrid(&tGrid, numRows, numCols);
 
+    Eigen::MatrixXd suppressionReference;
     //allocate solution array
     Eigen::MatrixXd sols[6];
     for (i=0;i<6;i++) {
@@ -139,8 +140,10 @@ bool checkCalculateGoodness() {
         for (fishmodel=0; fishmodel < 2; fishmodel++) {
             populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy,
                                   oucor, mux, muy, fishmodel);
-            calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &cGrid, bias,
-                                  range, peak, sd);
+            calculateGoodnessGrid(&tGrid, &bGrid, &gGrid,
+                                  &suppressionReference, bias,
+                                  range, range, range,
+                                  numRows, numCols,peak, sd);
             //gGrid.printData();
             methodID = "checkCalculateGoodness bias:" + std::to_string(bias) + " fishmodel:" + std::to_string(fishmodel);
             result = result & compareMatrix(&gGrid.data, &sols[(bias-1) * 2 + fishmodel], methodID);

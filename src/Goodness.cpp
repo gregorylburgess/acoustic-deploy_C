@@ -139,7 +139,7 @@ double restrictMaxVizDepth(double x) {
 }
 
 /**
- * Precalculates a distanceGradient representing the probability of detection
+ * Pre-calculates a distanceGradient representing the probability of detection
  * for a given cell based on its distance from the center, then calls the
  * appropriate goodness function based on the given bias.
  * @param topographyGrid A pointer to a Grid object containing topographic
@@ -148,6 +148,10 @@ double restrictMaxVizDepth(double x) {
  *        distribution for the animal(s) being studied.
  * @param goodnessGrid A pointer to an empty Grid object.  Resultant data
  *        will be dumped here.
+ * @param suppressionReference A pointer to an empty matrix.  This matrix
+ *        will contain the final visibility Grid calculated by the function.
+ *        Primarily for capturing the visibility Grid needed in
+ *        suppressionExact().
  * @param bias An integer representing the bias for goodness to use.
  *        Bias Meaning:
  *          1: Choose areas of high animal density, ignoring bathymetry.
@@ -156,6 +160,14 @@ double restrictMaxVizDepth(double x) {
  *             and animal density are considered).
  * @param sensorRange The maximum detection range of a sensor given in units
  *        of grid cells.
+ * @param startingRow The index of the row to start calculating goodness data
+ *        for in the goodnessGrid.
+ * @param startingCol The index of the col to start calculating goodness data
+ *        for in the goodnessGrid..
+ * @param rowDist The number of rows to calculate goodness data for in
+ *        the goodnessGrid.
+ * @param colDist The number of cols to calculate goodness data for in
+ *        the goodnessGrid.
  * @param sensorPeakDetectionProbability The probability of detecting a fish
  *        right next to the sensor.
  * @param SDofSensorDetectionRange The standard deviation of sensor range,
@@ -163,8 +175,11 @@ double restrictMaxVizDepth(double x) {
  *        probability curve (a normal distribution).
  */
 void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
-                           Grid* goodnessGrid, Grid* coverageGrid, int bias,
-                           int sensorRange,
+                           Grid* goodnessGrid,
+                           Eigen::MatrixXd* suppressionReference,
+                           int bias, int sensorRange,
+                           int startingRow, int startingCol,
+                           int rowDist, int colDist,
                            double sensorPeakDetectionProbability,
                            double SDofSensorDetectionRange) {
     int size = 2 * sensorRange + 1;
@@ -182,17 +197,17 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
                     sensorPeakDetectionProbability, SDofSensorDetectionRange);
 
     if (bias ==  1) {
-        goodness_Fish(topographyGrid, behaviorGrid, goodnessGrid, coverageGrid,
-                &distanceGradient, &detectionGradient, sensorRange,
-                sensorPeakDetectionProbability, SDofSensorDetectionRange);
+        goodness_Fish(topographyGrid, behaviorGrid, goodnessGrid,
+                &distanceGradient, &detectionGradient, suppressionReference,
+                sensorRange, startingRow, startingCol, rowDist, colDist);
     } else if (bias ==  2) {
-        goodness_Viz(topographyGrid, behaviorGrid, goodnessGrid,  coverageGrid,
-                &distanceGradient, &detectionGradient, sensorRange,
-                sensorPeakDetectionProbability, SDofSensorDetectionRange);
+        goodness_Viz(topographyGrid, behaviorGrid, goodnessGrid,
+                &distanceGradient, &detectionGradient, suppressionReference,
+                sensorRange, startingRow, startingCol, rowDist, colDist);
     } else if (bias ==  3) {
         goodness_VizOfFish(topographyGrid, behaviorGrid, goodnessGrid,
-                coverageGrid, &distanceGradient, &detectionGradient, sensorRange,
-                sensorPeakDetectionProbability, SDofSensorDetectionRange);
+                &distanceGradient, &detectionGradient, suppressionReference,
+                sensorRange, startingRow, startingCol, rowDist, colDist);
     } else {
         printError("ERROR! Invalid bias value.", -2,
                     acousticParams["timestamp"]);
@@ -202,7 +217,7 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
 }
 
 /**
- * Simply sums the cells within sensorRange of each cell on the BehaviorGrid.
+ * Sums the cells within sensorRange of each cell on the BehaviorGrid.
  * Results are written to goodnessGrid.
  * @param topographyGrid A pointer to a Grid object containing topographic
  *        information for the area of study.
@@ -215,37 +230,45 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
  * @param detectionGradient A pointer to a matrix containing the probability
  *        (based on distance from the center cell) of detecting a tag in the
  *        given cell.
+ * @param suppressionReference A pointer to an empty matrix.  This matrix
+ *        will contain the final visibility Grid calculated by the function.
+ *        Primarily for capturing the visibility Grid needed in
+ *        suppressionExact().
  * @param sensorRange The maximum detection range of a sensor given in units
  *        of grid cells.
- * @param sensorPeakDetectionProbability The probability of detecting a fish
- *        right next to the sensor.
- * @param SDofSensorDetectionRange The standard deviation of sensor range,
- *        determined by range testing.  Serves as a sigma value for the
- *        detection probability curve (a normal distribution).
+ * @param startingRow The index of the row to start calculating goodness data
+ *        for in the goodnessGrid.
+ * @param startingCol The index of the col to start calculating goodness data
+ *        for in the goodnessGrid..
+ * @param rowDist The number of rows to calculate goodness data for in
+ *        the goodnessGrid.
+ * @param colDist The number of cols to calculate goodness data for in
+ *        the goodnessGrid.
  */
 void goodness_Fish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
-              Grid* coverageGrid, Eigen::MatrixXd* distanceGradient,
-              Eigen::MatrixXd* detectionGradient, int sensorRange,
-              double sensorPeakDetectionProbability,
-              double SDofSensorDetectionRange) {
-    int cols = topographyGrid->cols,
-        rows = topographyGrid->rows,
-        rstart = 0, cstart = 0,
-        size = 2 * sensorRange + 1;
-    double endRow = rows-border;
+              Eigen::MatrixXd* distanceGradient,
+              Eigen::MatrixXd* detectionGradient,
+              Eigen::MatrixXd* suppressionReference,
+              int sensorRange,
+              int startingRow, int startingCol,
+              int rowDist, int colDist) {
+    int rstart = 0, cstart = 0,
+        size = 2 * sensorRange + 1,
+        endingRow = startingRow + rowDist,
+        endingCol = startingCol + colDist;
+    double endRow = endingRow;
 
-    for (int r = border; r < rows-border; r++) {
+    for (int r = startingRow; r < endingRow; r++) {
         if (debug) {
             std::cout  <<  (r + 1) / endRow  <<  "\n";
         }
         rstart = r - sensorRange;
-        for (int c = border; c < cols - border; c++) {
+        for (int c = startingCol; c < endingCol; c++) {
             cstart = c - sensorRange;
-            goodnessGrid->data(r, c) =  (behaviorGrid->data.block(rstart,
-                                         cstart, size, size).
-                                         cwiseProduct(*detectionGradient)).
-                                         cwiseProduct(coverageGrid->data.block(
-                                         rstart, cstart, size, size)).sum();
+            *suppressionReference = behaviorGrid->data.
+                    block(rstart, cstart, size, size).
+                    cwiseProduct(*detectionGradient);
+            goodnessGrid->data(r, c) =  suppressionReference->sum();
         }
     }
 }
@@ -266,60 +289,69 @@ void goodness_Fish(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
  * @param detectionGradient A pointer to a matrix containing the probability
  *        (based on distance from the center cell) of detecting a tag in the
  *        given cell.
+ * @param suppressionReference A pointer to an empty matrix.  This matrix
+ *        will contain the final visibility Grid calculated by the function.
+ *        Primarily for capturing the visibility Grid needed in
+ *        suppressionExact().
  * @param sensorRange The maximum detection range of a sensor given in units
  *        of grid cells.
- * @param sensorPeakDetectionProbability The probability of detecting a fish
- *        right next to the sensor.
- * @param SDofSensorDetectionRange The standard deviation of sensor range,
- *        determined by range testing.  Serves as a sigma value for the detection
- *        probability curve (a normal distribution).
+ * @param startingRow The index of the row to start calculating goodness data
+ *        for in the goodnessGrid.
+ * @param startingCol The index of the col to start calculating goodness data
+ *        for in the goodnessGrid..
+ * @param rowDist The number of rows to calculate goodness data for in
+ *        the goodnessGrid.
+ * @param colDist The number of cols to calculate goodness data for in
+ *        the goodnessGrid.
  */
 void goodness_Viz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
-             Grid* coverageGrid, Eigen::MatrixXd* distanceGradient,
-             Eigen::MatrixXd* detectionGradient, int sensorRange,
-             double sensorPeakDetectionProbability,
-             double SDofSensorDetectionRange) {
+             Eigen::MatrixXd* distanceGradient,
+             Eigen::MatrixXd* detectionGradient,
+             Eigen::MatrixXd* suppressionReference, int sensorRange,
+             int startingRow, int startingCol,
+             int rowDist, int colDist) {
     int cols = topographyGrid->cols,
         rows = topographyGrid->rows,
         size = 2 * sensorRange + 1,
         lowerBorderRange = 2*border,
         upperRowRng = rows-2*border-1,
-        upperColRng = cols-2*border-1;
-    double endRow = rows-border;
+        upperColRng = cols-2*border-1,
+        endingRow = startingRow + rowDist,
+        endingCol = startingCol + colDist;
+    double endRow = endingRow;
 
     // declare and initialize matrices
     Eigen::MatrixXd visibilityGrid;
     Eigen::MatrixXd localTopography;
-    Eigen::MatrixXd temp;
     visibilityGrid.resize(size, size);
     visibilityGrid.setConstant(0);
 
-    for (int r = border; r < rows-border; r++) {
+    for (int r = startingRow; r < endingRow; r++) {
         if (debug) {
             std::cout  <<  (r + 1) / endRow  <<  "\n";
         }
-        for (int c = border; c < cols-border; c++) {
+        for (int c = startingCol; c < endingCol; c++) {
             // compute the visibility grid for each cell
             calcVizGrid(topographyGrid, distanceGradient, &visibilityGrid,
-                        &localTopography, &temp, r, c, sensorRange);
+                        &localTopography, suppressionReference, r, c, sensorRange);
             // invalidate cells above the surface
             visibilityGrid = visibilityGrid.
                     unaryExpr(std::ptr_fun(restrictMaxVizDepth));
             // compute {probability of detection due to range}*
             //   {visible depth}/{actual depth}
-            temp = ((visibilityGrid.cwiseQuotient(localTopography)).
-                    cwiseProduct(*detectionGradient)).
-                    cwiseProduct(coverageGrid->data.block(
-                    r - sensorRange, c - sensorRange, size, size));
+            *suppressionReference = ((visibilityGrid.
+                    cwiseQuotient(localTopography)).
+                    cwiseProduct(*detectionGradient));
             // if we're near the border, there will be null values
             //  (because we divided visible depth by the depth of a border cell
             //  (which is 0)).
             if (c < lowerBorderRange || r < lowerBorderRange ||
                      r > upperRowRng || c > upperColRng) {
-                temp = temp.unaryExpr(std::ptr_fun(validateZero));
+                    *suppressionReference = suppressionReference->
+                        unaryExpr(std::ptr_fun(validateZero));
             }
             // sum the resulting goodness
-            goodnessGrid->data(r, c) = temp.sum();
+            goodnessGrid->data(r, c) = suppressionReference->sum();
         }
     }
     // normalize the goodness of all cells to the range [0, 1]
@@ -343,37 +375,43 @@ void goodness_Viz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
  * @param detectionGradient A pointer to a matrix containing the probability
  *        (based on distance from the center cell) of detecting a tag in the
  *        given cell.
+ * @param suppressionReference A pointer to an empty matrix.  This matrix
+ *        will contain the final visibility Grid calculated by the function.
+ *        Primarily for capturing the visibility Grid needed in
+ *        suppressionExact().
  * @param sensorRange The maximum detection range of a sensor given in units
  *        of grid cells.
- * @param sensorPeakDetectionProbability The probability of detecting a fish
- *        right next to the sensor.
- * @param SDofSensorDetectionRange The standard deviation of sensor range,
- *        determined by range testing.  Serves as a sigma value for the detection
- *        probability curve (a normal distribution).
+ * @param startingRow The index of the row to start calculating goodness data
+ *        for in the goodnessGrid.
+ * @param startingCol The index of the col to start calculating goodness data
+ *        for in the goodnessGrid..
+ * @param rowDist The number of rows to calculate goodness data for in
+ *        the goodnessGrid.
+ * @param colDist The number of cols to calculate goodness data for in
+ *        the goodnessGrid.
  */
-// TODO(GREG) Abstract this to calculate goodness for a start point/ dist,
-//              then pass in  a pointer to catch the contents of the last calculation.
-//              This'll let us calculate visibility from single points (suppressionExact)
-//              and preserve the visibility grid.
 void goodness_VizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
-                    Grid* goodnessGrid, Grid* coverageGrid,
-                    Eigen::MatrixXd* distanceGradient,
-                    Eigen::MatrixXd* detectionGradient, int sensorRange,
-                    double sensorPeakDetectionProbability,
-                    double SDofSensorDetectionRange) {
+                    Grid* goodnessGrid, Eigen::MatrixXd* distanceGradient,
+                    Eigen::MatrixXd* detectionGradient,
+                    Eigen::MatrixXd* suppressionReference,
+                    int sensorRange,
+                    int startingRow, int startingCol,
+                    int rowDist, int colDist) {
     int cols = topographyGrid->cols,
         rows = topographyGrid->rows,
         size = 2 * sensorRange + 1,
         lowerBorderRange = 2*border,
         upperRowRng = rows-2*border-1,
         upperColRng = cols-2*border-1,
+        endingRow = startingRow + rowDist,
+        endingCol = startingCol + colDist,
         i = 0,
         j = 0;
     double totalFish = 0,
            visibleFish = 0,
            mean = 0,
            sd = 0,
-           endRow = rows-border;
+           endRow = endingRow;
     bool useRelativeBehaviorModel  =
             (acousticParams.count("meanRelativePosition") +
              acousticParams.count("RelativePositionSD") ==  2);
@@ -391,85 +429,79 @@ void goodness_VizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
     Eigen::MatrixXd localTopography;
     Eigen::MatrixXd localBehavior;
     Eigen::MatrixXd fishVisibility;
-    Eigen::MatrixXd temp;
 
     visibilityMatrix.resize(size, size);
     visibilityMatrix.setConstant(0);
     fishVisibility.resize(size, size);
     fishVisibility.setConstant(0);
 
-    for (int r = border; r < rows-border; r++) {
+    // for (int r = border; r < rows-border; r++) {
+    for (int r = startingRow; r < endingRow; r++) {
         if (debug) {
             std::cout  <<  (r + 1) / endRow  <<  "\n";
         }
         // out  <<  "\n"  <<  r;
-        for (int c = border; c < cols-border; c++) {
-            // compute the visibility grid for each cell
+        // for (int c = border; c < cols-border; c++) {
+        for (int c = startingCol; c < endingCol; c++) {
+            // compute the visibilityMatrix for each cell
             calcVizGrid(topographyGrid, distanceGradient, &visibilityMatrix,
-                        &localTopography, &temp, r, c, sensorRange);
+                        &localTopography, suppressionReference, r, c,
+                        sensorRange);
             // invalidate cells above the surface
             visibilityMatrix = visibilityMatrix.
                             unaryExpr(std::ptr_fun(restrictMaxVizDepth));
+            // Copy out the relevant behavioral data
             localBehavior = behaviorGrid->data.
                             block(r-sensorRange, c-sensorRange, size, size);
+
             // Compute the visible percentage of fish in the water column of
-            //   each cell
-
-            // Linear distribution model
-            fishVisibility = visibilityMatrix.cwiseQuotient(localTopography);
-            fishVisibility.unaryExpr(std::ptr_fun(validateZero));
-
-
-            // Normal distribution model
-            if (useRelativeBehaviorModel) {
+            // each cell (fills in the fishVisibility Matrix)
+            if (useRelativeBehaviorModel) { // Normal distribution model
                 for (i = 0; i < size; i++) {
                     for (j = 0; j < size; j++) {
                         // if you can see the whole water column, you can see
-                        //   all available fish,
-                        // regardless of the distribution model
+                        // all available fish, regardless of the distribution
+                        // model
                         if (visibilityMatrix(i, j) ==  1) {
                             fishVisibility(i, j) = 1;
                         } else {  // if you can't, then things get interesting.
                             // compute total available fish
                             totalFish = cdistPartition(mean, sd, 1, 0);
 
-                            // std::cout  <<  "cdistPartition(" << mean <<
-                            //   ", " << sd << ", "  <<
-                            //   localBehavior(i, j) << ", " << 0 <<
-                            //   ") = " << totalFish;
                             // compute total visible fish
                             visibleFish = cdistPartition(mean, sd,
                                           fishVisibility(i, j), 0);
                             // compute visible/total
                             fishVisibility(i, j) = visibleFish / totalFish;
-                            // std::cout  <<  visibleFish  <<  "/"  <<
-                            //   totalFish  <<  " = "   <<
-                            //   visibleFish/totalFish  <<  "\n";
                         }
                     }
                 }
                 // revalidate in case we divided by zero again...
                 fishVisibility.unaryExpr(std::ptr_fun(validateZero));
+            } else { // Linear distribution model
+                // Divide the visible depths by the actual depths
+                fishVisibility = visibilityMatrix.cwiseQuotient(localTopography);
+                fishVisibility.unaryExpr(std::ptr_fun(validateZero));
             }
+
             // compute {probability of detection due to range} * {visible fish}
-            temp = ((*detectionGradient).cwiseProduct(fishVisibility).
-                    cwiseProduct(localBehavior)).
-                    cwiseProduct(coverageGrid->data.block(r - sensorRange,
-                                 c - sensorRange, size, size));
+            *suppressionReference = ((*detectionGradient).cwiseProduct(fishVisibility).
+                    cwiseProduct(localBehavior));
             // if we're near the border, there will be null values
             //   (because we divided visible depth
             // by the depth of a border cell (which is 0)).
             if (c < lowerBorderRange  ||  r < lowerBorderRange  ||
                     r > upperRowRng || c > upperColRng) {
-                temp = temp.unaryExpr(std::ptr_fun(validateZero));
+                *suppressionReference = suppressionReference->
+                        unaryExpr(std::ptr_fun(validateZero));
             }
 
             // sum the resulting goodness
-            goodnessGrid->data(r, c) = temp.sum();
+            goodnessGrid->data(r, c) = suppressionReference->sum();
         }
     }
     // normalize the goodness of all cells to the range [0, 1]
-    goodnessGrid->data = goodnessGrid->data / (size*size);
+    goodnessGrid->data = goodnessGrid->data / (size * size);
 }
 
 
@@ -790,7 +822,7 @@ void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid, Grid* go
 
 
 
-void suppressionQuick(Grid* gridToSuppress, Grid* coverageGrid,
+void suppressionQuick(Grid* gridToSuppress,
                       Eigen::MatrixXd* suppressionGradient,
                       int row, int col, int sensorRange,
                       int suppressionDiameter) {
@@ -821,20 +853,24 @@ void suppressionQuick(Grid* gridToSuppress, Grid* coverageGrid,
 
 // TODO(GREG) implement bias options
 void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
-                Grid* goodnessGrid, Grid* coverageGrid, int bias, int row,
-                int col, int sensorRange, int suppressionDiameter,
+                Grid* goodnessGrid, int bias, int row, int col,
+                int sensorRange, int suppressionDiameter,
                 std::string timeStamp) {
     // Do the right thing for the given bias.
+    // TODO(Greg) Does it make sense to be able to use suppressionExact on bias 1???
     if (bias == 1) {
         // Ca
+    } else if (bias == 2) {
+        // Recalculate the goodness of cells within suppressDiameter +
+        // 2 * sensorRange
     } else if (bias == 3) {
         // Calculate specific visibility grid for cell (row,col)
         // Subtract this from the behaviorGrid
         // Call goodness_VizOfFish() function to update goodness for cells within sensor range of (row,col)
 
         // Calculate affected indicies
-        int GRID_ROW_COUNT = gridToSuppress->data.rows(),
-                GRID_COL_COUNT = gridToSuppress->data.cols(),
+        int GRID_ROW_COUNT = behaviorGrid->data.rows(),
+                GRID_COL_COUNT = behaviorGrid->data.cols(),
                 startRow = std::max(row - sensorRange, 0),
                 startCol = std::max(col - sensorRange, 0),
                 rowDist = std::min(suppressionDiameter, GRID_ROW_COUNT - startRow),
@@ -852,15 +888,12 @@ void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
             }
             // Suppress the chosen point
             temp.block(0, 0, rowDist, colDist) =
-                    gridToSuppress->data.block(startRow, startCol, rowDist, colDist);
+                    behaviorGrid->data.block(startRow, startCol, rowDist, colDist);
             behaviorGrid->data.block(startRow, startCol, rowDist, colDist) =
                     (temp.cwiseProduct(*suppressionGradient)).block(0, 0, rowDist,
                     colDist);
         // Recalculate the goodness of cells within
         // suppressionDiameter + 2 * sensorRange
-    } else if (bias == 2) {
-        // Recalculate the goodness of cells within suppressDiameter +
-        // 2 * sensorRange
     } else {
         // We should never normally hit this error
         std::string errorMsg = "Invalid bais given: " + std::to_string(bias) +

@@ -15,8 +15,13 @@
 #include "Grid.h"
 #include "Utility.h"
 void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
-                        Grid* goodnessGrid, Grid* coverageGrid, int bias,
-                        int range, double peak, double sd);
+                        Grid* goodnessGrid,
+                        Eigen::MatrixXd* suppressionReference,
+                        int bias, int sensorRange,
+                        int startingRow, int startingCol,
+                        int rowDist, int colDist,
+                        double sensorPeakDetectionProbability,
+                        double SDofSensorDetectionRange);
 std::vector<std::pair<int, int>> getCells(const std::pair <int, int> *origin,
                         const std::pair <int, int> *target);
 void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
@@ -30,23 +35,23 @@ void getStats(Grid* unsuppressedGoodnessGrid, Grid* suppressedGoodnessGrid,
                         double* sparsity, double* absRecoveryRate,
                         double* uniqueRecoveryRate, Grid* coverageGrid);
 void goodness_Fish(Grid* topographyGrid, Grid* behaviorGrid,
-                        Grid* goodnessGrid, Grid* coverageGrid,
-                        Eigen::MatrixXd* distanceGradient,
-                        Eigen::MatrixXd* detectionGradient, int sensorRange,
-                        double sensorPeakDetectionProbability,
-                        double SDofSensorDetectionRange);
+                        Grid* goodnessGrid, Eigen::MatrixXd* distanceGradient,
+                        Eigen::MatrixXd* detectionGradient,
+                        Eigen::MatrixXd* suppressionReference,
+                        int sensorRange, int startingRow, int startingCol,
+                        int rowDist, int colDist);
 void goodness_Viz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
-                        Grid* coverageGrid,
                         Eigen::MatrixXd* distanceGradient,
-                        Eigen::MatrixXd* detectionGradient, int sensorRange,
-                        double sensorPeakDetectionProbability,
-                        double SDofSensorDetectionRange);
+                        Eigen::MatrixXd* detectionGradient,
+                        Eigen::MatrixXd* suppressionReference,
+                        int sensorRange, int startingRow, int startingCol,
+                        int rowDist, int colDist);
 void goodness_VizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
-                        Grid* goodnessGrid, Grid* coverageGrid,
-                        Eigen::MatrixXd* distanceGradient,
-                        Eigen::MatrixXd* detectionGradient, int sensorRange,
-                        double sensorPeakDetectionProbability,
-                        double SDofSensorDetectionRange);
+                        Grid* goodnessGrid, Eigen::MatrixXd* distanceGradient,
+                        Eigen::MatrixXd* detectionGradient,
+                        Eigen::MatrixXd* suppressionReference,
+                        int sensorRange, int startingRow, int startingCol,
+                        int rowDist, int colDist);
 void makeDetectionGradient(Eigen::MatrixXd* detectionGradient,
                         Eigen::MatrixXd* distGradient,
                         double sensorPeakDetectionProbability,
