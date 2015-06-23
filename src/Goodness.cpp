@@ -181,18 +181,12 @@ void calculateGoodnessGrid(Grid* topographyGrid, Grid* behaviorGrid,
                            Eigen::MatrixXd* distanceGradient,
                            int bias, int sensorRange,
                            int startingRow, int startingCol,
-                           int rowDist, int colDist,
-                           double sensorPeakDetectionProbability,
-                           double SDofSensorDetectionRange) {
+                           int rowDist, int colDist) {
     if (bias ==  1) {
         goodness_Fish(topographyGrid, behaviorGrid, goodnessGrid,
                 detectionGradient, distanceGradient, suppressionReference,
                 sensorRange, startingRow, startingCol, rowDist, colDist);
-    } else if (bias ==  2) {
-        goodness_Viz(topographyGrid, behaviorGrid, goodnessGrid,
-                detectionGradient, distanceGradient, suppressionReference,
-                sensorRange, startingRow, startingCol, rowDist, colDist);
-    } else if (bias ==  3) {
+    } else if (bias ==  2 || bias ==  3) {
         goodness_VizOfFish(topographyGrid, behaviorGrid, goodnessGrid,
                 detectionGradient, distanceGradient, suppressionReference,
                 sensorRange, startingRow, startingCol, rowDist, colDist);
@@ -603,14 +597,17 @@ std::vector<std::pair<int, int>> getCells(const std::pair<int, int> *origin,
  * @param distGradient A pointer to an empty matrix.
  * @param rng The maximum detection range of a sensor.  This determines the
  *        size of the grid.
+ * @param scalingFactor A scaling value used to reduce a cell's perceived
+ *        distance.  All cell distances will be divided by this value.
  */
-void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
+void makeDistGradient(Eigen::MatrixXd* distGradient, int rng, double scalingFactor) {
     int size = 2 * rng + 1;
+    double maxRange = rng / scalingFactor;
     Eigen::MatrixXd X;
     Eigen::MatrixXd Y;
     // Vectors from -rng to rng, of length size
-    Eigen::VectorXd refx = refx.LinSpaced(size, -rng, rng);
-    Eigen::VectorXd refy = refy.LinSpaced(size, -rng, rng);
+    Eigen::VectorXd refx = refx.LinSpaced(size, -maxRange, maxRange);
+    Eigen::VectorXd refy = refy.LinSpaced(size, -maxRange, maxRange);
     std::vector< std::pair<int, int>> cells;
 
     Y = refy.replicate(1, size);
@@ -622,6 +619,18 @@ void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
     *distGradient = Y.cwiseAbs2() + X.cwiseAbs2();
     *distGradient = distGradient->cwiseSqrt();
     (*distGradient)(rng, rng) = 1;
+}
+
+/**
+ * Computes the distanceGradient for a given square matrix. Results are
+ * dumped to distGradient.
+ * The resulting matrix contains each cell's distance from the center cell.
+ * @param distGradient A pointer to an empty matrix.
+ * @param rng The maximum detection range of a sensor.  This determines the
+ *        size of the grid.
+**/
+void makeDistGradient(Eigen::MatrixXd* distGradient, int rng) {
+    makeDistGradient(distGradient, rng, 1);
 }
 
 /**
@@ -763,7 +772,7 @@ void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distanceGradient,
  */
 void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid,
                     Grid* goodnessGrid, Grid* goodnessGridPerfect,
-                    Grid* coverageGrid, Eigen::MatrixXd* bestSensors,
+                    Eigen::MatrixXd* bestSensors,
                     Eigen::MatrixXd* userSensors,
                     Eigen::MatrixXd* suppressionReference,
                     Eigen::MatrixXd* detectionGradient,
@@ -773,8 +782,14 @@ void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid,
                     double sensorPeakDetectionProbability,
                     double SDofSensorDetectionRange,
                     std::string timeStamp) {
-    int row = 0, col = 0, i = 0;
-
+    int row = 0, col = 0, i = 0,
+        suppressionDiameter = (2 * ceil(sensorRange * suppressionRangeFactor)) + 1,
+        detectionDiameter = 2 * sensorRange + 1;
+    Eigen::MatrixXd suppressionScaledDistanceGradient;
+    suppressionScaledDistanceGradient.resize(suppressionDiameter,
+                                             suppressionDiameter);
+    makeDistGradient(&suppressionScaledDistanceGradient,
+                         suppressionDiameter, suppressionRangeFactor);
     // Process all the user-specified sensor locations
     for (i = 0; i < userSensors->rows(); i++) {
         // Translate user data to our internal grid
@@ -788,9 +803,11 @@ void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid,
         // Suppress the chosen point
         suppress(topographyGrid, behaviorGrid, goodnessGrid,
                 suppressionReference, detectionGradient,
-                distanceGradient, row, col, sensorRange,
-                bias, suppressionRangeFactor, sensorPeakDetectionProbability,
-                SDofSensorDetectionRange, timeStamp);
+                distanceGradient, &suppressionScaledDistanceGradient,row, col,
+                sensorRange, bias, suppressionRangeFactor,
+                sensorPeakDetectionProbability,
+                SDofSensorDetectionRange, suppressionDiameter,
+                detectionDiameter, timeStamp);
 
     }
 
@@ -808,11 +825,13 @@ void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid,
        // Record the Absolute Recovery Rate
         (*bestSensors)(i, 3) = goodnessGridPerfect->data(row, col);
         // Suppress the chosen point
-        suppress(topographyGrid, behaviorGrid, goodnessGrid, suppressionReference,
-                detectionGradient, distanceGradient, row, col,
+        suppress(topographyGrid, behaviorGrid, goodnessGrid,
+                suppressionReference, detectionGradient,
+                distanceGradient, &suppressionScaledDistanceGradient,row, col,
                 sensorRange, bias, suppressionRangeFactor,
-                sensorPeakDetectionProbability, SDofSensorDetectionRange,
-                timeStamp);
+                sensorPeakDetectionProbability,
+                SDofSensorDetectionRange, suppressionDiameter,
+                detectionDiameter, timeStamp);
     }
 }
 
@@ -848,7 +867,6 @@ void suppressionQuick(Grid* gridToSuppress,
             colDist);
 }
 
-// TODO(GREG) implement bias options
 void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
                 Grid* goodnessGrid, Eigen::MatrixXd* suppressionReference,
                 Eigen::MatrixXd* detectionGradient,
@@ -857,86 +875,75 @@ void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
                 int sensorRange, int suppressionDiameter,
                 std::string timeStamp) {
 
-    int GRID_ROW_COUNT = behaviorGrid->data.rows(),
-        GRID_COL_COUNT = behaviorGrid->data.cols(),
-        startRow = std::max(row - sensorRange, border),
-        startCol = std::max(col - sensorRange, border),
-        rowDist = std::min(suppressionDiameter, GRID_ROW_COUNT - startRow),
-        colDist = std::min(suppressionDiameter, GRID_COL_COUNT - startCol);
-    // Do the right thing for the given bias.
-    if (bias == 1) {
-        // Calculate the visualization grid for the given point,
-        goodness_Fish(topographyGrid, behaviorGrid, goodnessGrid,
-                     detectionGradient, distanceGradient, suppressionReference,
-                     sensorRange, row, col, 1, 1);
-        // Subtract the visualization grid from the behavior Grid
+    int gridRowCount = behaviorGrid->data.rows(),
+        gridColCount = behaviorGrid->data.cols(),
+        suppressionRange = (suppressionDiameter - 1) / 2,
+        suppressionStartingRow = std::max(row - suppressionRange, border),
+        suppressionStartingCol = std::max(col - suppressionRange, border),
+        detectionStartingRow = std::max(row - sensorRange, border),
+        detectionStartingCol = std::max(col - sensorRange, border),
+        rowDist = std::min(suppressionDiameter, (gridRowCount -
+                           suppressionStartingRow - border)),
+        colDist = std::min(suppressionDiameter, (gridColCount -
+                           suppressionStartingCol - border)),
+        detectionDiameter = 2 * sensorRange + 1;
+    Eigen::MatrixXd temp;
+    temp.resize(detectionDiameter, detectionDiameter);
 
-        // Recalculate the goodness for the area surrounding the suppressed region.
-        
-    } else if (bias == 2) {
-        // Recalculate the goodness of cells within suppressDiameter +
-        // 2 * sensorRange
-    } else if (bias == 3) {
-        // Calculate specific visibility grid for cell (row,col)
-        // Subtract this from the behaviorGrid
-        // Call goodness_VizOfFish() function to update goodness for cells within sensor range of (row,col)
+    // Calcuate the visibility grid for the cell given cell @ (row, col)
+    calculateGoodnessGrid(topographyGrid,behaviorGrid,
+            goodnessGrid, suppressionReference,
+            detectionGradient, distanceGradient,
+            bias, sensorRange,
+            row, col, 1, 1);
 
-        // Calculate affected indicies
-        
-            Eigen::MatrixXd temp;
-            temp.resize(suppressionDiameter, suppressionDiameter);
-            if (debug) {
-                std::cout << "Blocking " << startRow << "," << startCol << " for " <<
-                             rowDist << ", " << colDist << " cells.\n" <<
-                             "suppress sensor @ (" << row << "," << col <<
-                             ")\nsuppressionDiameter: " << suppressionDiameter <<
-                             "\nstartRow,startCol: " << startRow << "," << startCol <<
-                             "\nrowDist, colDist: " << rowDist << "," << colDist <<
-                             "\n";
-            }
-            // Suppress the chosen point
-            temp.block(0, 0, rowDist, colDist) =
-                    behaviorGrid->data.block(startRow, startCol, rowDist, colDist);
-           /* behaviorGrid->data.block(startRow, startCol, rowDist, colDist) =
-                    (temp.cwiseProduct(*suppressionGradient)).block(0, 0, rowDist,
-                    colDist);*/
-        // Recalculate the goodness of cells within
-        // suppressionDiameter + 2 * sensorRange
-    } else {
-        // We should never normally hit this error
-        std::string errorMsg = "Invalid bais given: " + std::to_string(bias) +
-                               ". Valid values are between 1 and 3.";
-        printError(errorMsg, 1, timeStamp);
-    }
+    // Subtract this visibility grid from the behaviorGrid
+    temp = behaviorGrid->data.block(detectionStartingRow, detectionStartingCol,
+                                    detectionDiameter, detectionDiameter);
+    behaviorGrid->data.block(detectionStartingRow, detectionStartingCol,
+                             detectionDiameter, detectionDiameter) =
+                             temp - *suppressionReference;
+
+    // Call calculateGoodnessGrid to update goodness for cells within sensor range of (row, col)
+    calculateGoodnessGrid(topographyGrid,behaviorGrid,
+                          goodnessGrid, suppressionReference,
+                          detectionGradient, distanceGradient,
+                          bias, sensorRange,
+                          suppressionStartingRow, suppressionStartingCol,
+                          rowDist, colDist);
 }
 
 
 void suppress(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
+              Eigen::MatrixXd* suppressionReference,
               Eigen::MatrixXd* detectionGradient,
-              Eigen::MatrixXd* distanceGradient, int row, int col,
-              int sensorRange, int bias, double suppressionRangeFactor,
+              Eigen::MatrixXd* distanceGradient,
+              Eigen::MatrixXd* suppressionScaledDistanceGradient,
+              int row, int col, int sensorRange, int bias,
+              double suppressionRangeFactor,
               double sensorPeakDetectionProbability,
-              double SDofSensorDetectionRange, std::string timeStamp) {
+              double SDofSensorDetectionRange,
+              double suppressionDiameter,
+              double detectionDiameter, std::string timeStamp) {
         // TODO(GREG) suppression range factor does nothing, bc at large dist,
         // the exponential dropoff of the detection function results in very
         // small penalties.  Need to somehow scale up that curve to increase
         // the penalty at distance.
-
-        int suppressionDiameter = ceil((2 * sensorRange * suppressionRangeFactor + 1) );
         if (acousticParams["suppressionMethod"] == "suppression.quick") {
             // Compute suppression gradient
             Eigen::MatrixXd suppressionGradient;
             suppressionGradient.resize(suppressionDiameter, suppressionDiameter);
             suppressionGradient = detectionGradient->array() *= -1;
             suppressionGradient.array() += sensorPeakDetectionProbability;
-            suppressionQuick(goodnessGrid, &suppressionGradient,
-                            row, col, sensorRange, suppressionDiameter);
+            suppressionQuick(goodnessGrid, suppressionReference,
+                             &suppressionGradient, row, col, sensorRange,
+                             suppressionDiameter);
         } else if (acousticParams["suppressionMethod"] == "suppression.exact") {
-            // TODO(GREG) fill in
             suppressionExact(behaviorGrid, topographyGrid, goodnessGrid,
-                    detectionGradient, distanceGradient,
-                    bias, row, col, sensorRange,
-                    suppressionDiameter, timeStamp);
+                             suppressionReference, detectionGradient,
+                             distanceGradient, bias, row, col, sensorRange,
+                             suppressionDiameter, timeStamp);
+
 
         } else {
             std::string errorMsg = "Invalid suppression method specified: "

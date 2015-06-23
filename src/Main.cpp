@@ -150,17 +150,22 @@ int main() {
 
     // Fetch or simulate topography
     std::cout << "Getting topography...";
-    if (simulateBathy) {
-        // Simulate topography
-        simulatetopographyGrid(&tGrid, rowDist, colDist);
+    if (bias == 2) {
+        // Bias 2 doesn't care at all about the behavior grid, but still needs
+        // a means of tracking visible fish.
+        bGrid.data.block(border,border, rowDist, colDist).setConstant(1);
     } else {
-        // Fetch topography
-        getBathy(&tGrid, acousticParams["inputFile"],
-                 acousticParams["inputFileType"], size_t(startRow),
-                 size_t(startCol), size_t(rowDist), size_t(colDist),
-                 acousticParams["seriesName"], acousticParams["timestamp"]);
+        if (simulateBathy) {
+            // Simulate topography
+            simulatetopographyGrid(&tGrid, rowDist, colDist);
+        } else {
+            // Fetch topography
+            getBathy(&tGrid, acousticParams["inputFile"],
+                     acousticParams["inputFileType"], size_t(startRow),
+                     size_t(startCol), size_t(rowDist), size_t(colDist),
+                     acousticParams["seriesName"], acousticParams["timestamp"]);
+        }
     }
-
     // Fill in Behavior Grid
     std::cout << "\nGetting Behavior...";
     populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy, oucor, mux,
@@ -190,9 +195,7 @@ int main() {
     calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &detectionGradient,
                         &distanceGradient, &suppressionReference, bias,
                         sensorDetectionRange, border, border,
-                        rowDist, colDist,
-                        sensorPeakDetectionProbability,
-                        SDofSensorDetectionRange);
+                        rowDist, colDist);
 
     // Check if we should proceed...
     if (gGrid.data.sum() <= 0) {

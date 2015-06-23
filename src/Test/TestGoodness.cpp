@@ -156,9 +156,7 @@ bool checkCalculateGoodness() {
                                   &suppressionReference, &detectionGradient,
                                   &distanceGradient, bias,
                                   sensorDetectionRange, sensorDetectionRange,
-                                  sensorDetectionRange, numRows, numCols,
-                                  sensorPeakDetectionProbability,
-                                  SDofSensorDetectionRange);
+                                  sensorDetectionRange, numRows, numCols);
             //gGrid.printData();
             methodID = "checkCalculateGoodness bias:" + std::to_string(bias) + " fishmodel:" + std::to_string(fishmodel);
             result = result & compareMatrix(&gGrid.data, &sols[(bias-1) * 2 + fishmodel], methodID);
