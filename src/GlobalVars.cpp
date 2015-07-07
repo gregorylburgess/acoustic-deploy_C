@@ -10,4 +10,4 @@
 #include <string>
 std::unordered_map <std::string, std::string> acousticParams = {};
 int border = 0;
-bool debug = false, silent = false;
+bool debug = true, silent = false;

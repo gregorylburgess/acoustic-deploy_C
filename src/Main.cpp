@@ -58,6 +58,17 @@ int main() {
     acousticParams.insert({ "timestamp", "-1" });
     acousticParams.insert({ "logScaleGraphColoring", "1" });
     acousticParams.insert({ "contourDepths", "0,-20,-40,-80" });
+    double suppressionRangeFactor =
+                       std::stod(acousticParams["suppressionRangeFactor"]),
+           ousdx     = std::stod(acousticParams["ousdx"]),
+           ousdy     = std::stod(acousticParams["ousdy"]),
+           oucor     = std::stod(acousticParams["oucor"]),
+           mux       = std::stod(acousticParams["mux"]),
+           muy       = std::stod(acousticParams["muy"]),
+           fishmodel = std::stod(acousticParams["fishmodel"]),
+           networkSparsity = 0, absRecoveryRate = 0, uniqueRecoveryRate = 0,
+           goodnessGridComputationTime = 0, totalComputationTime = 0;
+
     int    startRow = 450,
            startCol = 340,  // 450,340,200,200 (1km)netcdf
            rowDist = 201,   // 100 0 800 1500 (5m)netcdf
@@ -77,22 +88,14 @@ int main() {
            numOptimalSensors =
                    std::stoi(acousticParams["numOptimalSensors"]),
            numProjectedSensors =
-                   std::stoi(acousticParams["numProjectedSensors"]);
-           border = sensorDetectionRange;
-    double suppressionRangeFactor =
-                       std::stod(acousticParams["suppressionRangeFactor"]),
-           ousdx     = std::stod(acousticParams["ousdx"]),
-           ousdy     = std::stod(acousticParams["ousdy"]),
-           oucor     = std::stod(acousticParams["oucor"]),
-           mux       = std::stod(acousticParams["mux"]),
-           muy       = std::stod(acousticParams["muy"]),
-           fishmodel = std::stod(acousticParams["fishmodel"]),
-
-
-           networkSparsity = 0, absRecoveryRate = 0, uniqueRecoveryRate = 0,
-           goodnessGridComputationTime = 0, totalComputationTime = 0;
-
+                   std::stoi(acousticParams["numProjectedSensors"]),
+           suppressionDiameter = (2 * ceil(sensorDetectionRange * suppressionRangeFactor)) + 1;
+    // Set the global border size
+    border = sensorDetectionRange;
     clock_t begin, end, vizBegin, vizEnd;
+
+
+
 
     // TODO(Greg) Data validation
     // Parse User Sensor Placements
@@ -145,21 +148,33 @@ int main() {
     Grid gGrid(rowDist + 2 * border, colDist + 2 * border, "Goodness");
     Grid tGrid(rowDist + 2 * border, colDist + 2 * border, "Topography");
     Grid cGrid(rowDist + 2 * border, colDist + 2 * border, "Coverage");
-    tGrid.data.setConstant(0);
+
     Eigen::MatrixXd suppressionReference;
+    Eigen::MatrixXd distanceGradient;
+    Eigen::MatrixXd detectionGradient;
+    distanceGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    distanceGradient.setConstant(0);
+    detectionGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
+    detectionGradient.setConstant(0);
+    // Create a gradient of distances to avoid redundant computation
+    makeDistGradient(&distanceGradient, sensorDetectionRange);
+    // Create a gradient of probability of detection (due to sensorRange) to
+    // avoid redundant computation
+    makeDetectionGradient(&detectionGradient, & distanceGradient,
+                   sensorPeakDetectionProbability, SDofSensorDetectionRange);
 
     // Fetch or simulate topography
     std::cout << "Getting topography...";
     if (bias == 2) {
         // Bias 2 doesn't care at all about the behavior grid, but still needs
-        // a means of tracking visible fish.
+        // a means of tracking visible fish.  So give it a grid of 1s.
         bGrid.data.block(border,border, rowDist, colDist).setConstant(1);
     } else {
         if (simulateBathy) {
             // Simulate topography
             simulatetopographyGrid(&tGrid, rowDist, colDist);
         } else {
-            // Fetch topography
+            // Fetch actual topography
             getBathy(&tGrid, acousticParams["inputFile"],
                      acousticParams["inputFileType"], size_t(startRow),
                      size_t(startCol), size_t(rowDist), size_t(colDist),
@@ -177,26 +192,18 @@ int main() {
     // Mr. Gaeta, START THE CLOCK!
     vizBegin = clock();
     std::cout << "\nGetting Goodness...\n";
-
-    Eigen::MatrixXd distanceGradient;
-    Eigen::MatrixXd detectionGradient;
-    distanceGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
-    distanceGradient.setConstant(0);
-    detectionGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
-    detectionGradient.setConstant(0);
-    // Create a gradient of distances to avoid redundant computation
-    makeDistGradient(&distanceGradient, sensorDetectionRange);
-    // Create a gradient of probability of detection (due to sensorRange) to
-    // avoid redundant computation
-    makeDetectionGradient(&detectionGradient, & distanceGradient,
-                   sensorPeakDetectionProbability, SDofSensorDetectionRange);
-
     // Calculate good sensor locations
-    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &detectionGradient,
-                        &distanceGradient, &suppressionReference, bias,
+    calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &suppressionReference,
+                        &detectionGradient, &distanceGradient, bias,
                         sensorDetectionRange, border, border,
                         rowDist, colDist);
 
+
+    //======================
+    Graph bg = Graph(&bGrid);
+    bg.writeMat();
+    Graph tg = Graph(&tGrid);
+    tg.writeMat();
     // Check if we should proceed...
     if (gGrid.data.sum() <= 0) {
         printError(
@@ -220,8 +227,8 @@ int main() {
                    &detectionGradient, &distanceGradient,
                    numOptimalSensors + numProjectedSensors,
                    sensorDetectionRange, bias, suppressionRangeFactor,
-                   sensorPeakDetectionProbability, SDofSensorDetectionRange,
-                   acousticParams["timestamp"]);
+                   suppressionDiameter, sensorPeakDetectionProbability,
+                   SDofSensorDetectionRange, acousticParams["timestamp"]);
 
     std::cout << bestSensors << "\n";
 

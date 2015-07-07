@@ -493,13 +493,16 @@ void resetGoodnessGrid (Eigen::MatrixXd* grid) {
  * Tests selectTopSpots().
  */
 bool testSelectTopSpots() {
-    int sensorDetectionRange = 2,
-        sensorDetectionDiameter = sensorDetectionRange * 2 + 1,
-        numSensorsToPlace = 3,
-        i=0, bias = 1;
     double sensorPeakDetectionProbability = 1,
            SDofSensorDetectionRange = 1,
            suppressionRangeFactor = 1;
+
+    int sensorDetectionRange = 2,
+        sensorDetectionDiameter = sensorDetectionRange * 2 + 1,
+        suppressionDiameter = (2 * ceil(sensorDetectionRange *
+                               suppressionRangeFactor)) + 1,
+        numSensorsToPlace = 3,
+        i=0, bias = 1;
     border = sensorDetectionRange;
     bool result = true;
     int size = 2 * (sensorDetectionRange + border) + 1;
@@ -604,6 +607,7 @@ bool testSelectTopSpots() {
                        &detectionGradient, &distanceGradient,
                        numSensorsToPlace, sensorDetectionRange, bias,
                        suppressionRangeFactor,
+                       suppressionDiameter,
                        sensorPeakDetectionProbability,
                        SDofSensorDetectionRange, "-1");
         //std::cout<< "i:"<< i <<"\nGoodnessGrid:\n" << goodnessGrid->data <<"\n\n\nbestSensors:\n" <<bestSensors[i]<<"\n\n";

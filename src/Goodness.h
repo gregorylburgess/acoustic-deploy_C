@@ -26,8 +26,8 @@ std::vector<std::pair<int, int>> getCells(const std::pair <int, int> *origin,
                         const std::pair <int, int> *target);
 void calcVizGrid(Grid* topographyGrid, Eigen::MatrixXd* distGradient,
                         Eigen::MatrixXd* solutionGrid,
-                        Eigen::MatrixXd* localTopo, Eigen::MatrixXd* temp,
-                        int rStart, int cStart, int rng);
+                        Eigen::MatrixXd* localTopo, Eigen::MatrixXd* tempGrid,
+                        int row, int col, int sensorDetectionRange);
 double cdist(double mean, double sd, double x);
 double cdistPartition(double mean, double sd, double start, double end);
 void getStats(Grid* unsuppressedGoodnessGrid, Grid* suppressedGoodnessGrid,
@@ -68,6 +68,7 @@ void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid, Grid* go
                         Eigen::MatrixXd* distanceGradient,
                         int numSensorsToPlace,
                         int sensorRange, int bias, double suppressionRangeFactor,
+                        double suppressionDiameter,
                         double sensorPeakDetectionProbability,
                         double SDofSensorDetectionRange,
                         std::string timeStamp);
@@ -75,7 +76,8 @@ void suppress(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
                         Eigen::MatrixXd* suppressionReference,
                         Eigen::MatrixXd* detectionGradient,
                         Eigen::MatrixXd* distanceGradient,
-                        Eigen::MatrixXd* suppressionScaledDistanceGradient,
+                        Eigen::MatrixXd* suppressionDetectionGradient,
+                        Eigen::MatrixXd* suppressionDistanceGradient,
                         int row, int col, int sensorRange, int bias,
                         double suppressionRangeFactor,
                         double sensorPeakDetectionProbability,
@@ -87,6 +89,7 @@ void suppressionExact(Grid* behaviorGrid, Grid* topographyGrid,
                         Eigen::MatrixXd* suppressionReference,
                         Eigen::MatrixXd* detectionGradient,
                         Eigen::MatrixXd* distanceGradient,
+                        Eigen::MatrixXd* suppressionGradient,
                         int bias, int row, int col, int sensorRange,
                         int suppressionDiameter, std::string timeStamp);
 void suppressionQuick(Grid* gridToSuppress,
