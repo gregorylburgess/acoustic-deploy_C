@@ -40,12 +40,6 @@ void goodness_Fish(Grid* topographyGrid, Grid* behaviorGrid,
                         Eigen::MatrixXd* suppressionReference,
                         int sensorRange, int startingRow, int startingCol,
                         int rowDist, int colDist);
-void goodness_Viz(Grid* topographyGrid, Grid* behaviorGrid, Grid* goodnessGrid,
-                        Eigen::MatrixXd* detectionGradient,
-                        Eigen::MatrixXd* distanceGradient,
-                        Eigen::MatrixXd* suppressionReference,
-                        int sensorRange, int startingRow, int startingCol,
-                        int rowDist, int colDist);
 void goodness_VizOfFish(Grid* topographyGrid, Grid* behaviorGrid,
                         Grid* goodnessGrid, Eigen::MatrixXd* detectionGradient,
                         Eigen::MatrixXd* distanceGradient,

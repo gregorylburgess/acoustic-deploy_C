@@ -36,8 +36,8 @@ int main() {
     acousticParams.insert({ "suppressionRangeFactor", "1"}),
     acousticParams.insert({ "suppressionMethod", "suppression.quick"}),
     acousticParams.insert({ "userSensors", "100,100,0,0,100,0,0,200" });
-    acousticParams.insert({ "numOptimalSensors", "20" });
-    acousticParams.insert({ "numProjectedSensors", "10" });
+    acousticParams.insert({ "numOptimalSensors", "10" });
+    acousticParams.insert({ "numProjectedSensors", "2" });
     acousticParams.insert({ "bias", "2" });
 
     acousticParams.insert({ "ousdx", ".1" });
@@ -48,8 +48,8 @@ int main() {
     acousticParams.insert({ "fishmodel", "1" });
     acousticParams.insert({ "minDepth", "15" });
     acousticParams.insert({ "maxDepth", "30" });
-    acousticParams.insert({ "meanRelativePosition", ".9" });
-    acousticParams.insert({ "RelativePositionSD", ".05" });
+    acousticParams.insert({ "meanRelativePosition", "1" });
+    acousticParams.insert({ "relativePositionSD", "1" });
     // acousticParams.insert({"inputFile", "himbsyn.bathy.v19.grd"});
     acousticParams.insert({"inputFile", "himbsyn.bathytopo.1km.v19.grd"});
     // acousticParams.insert({ "inputFile", "pal_5m.asc" });
@@ -70,15 +70,14 @@ int main() {
            goodnessGridComputationTime = 0, totalComputationTime = 0;
 
     int    startRow = 450,
-           startCol = 340,  // 450,340,200,200 (1km)netcdf
+           startCol = 340,  // 450,340,201,201 (1km)netcdf
            rowDist = 201,   // 100 0 800 1500 (5m)netcdf
            colDist = 201,   // 300 200 501 501 (palmyra) asc
            height = 1000,
            width = 1000,
-           bias = 3,
+           bias = 1,
            sensorDetectionRange = 4,
            sensorDetectionDiameter = 2 * sensorDetectionRange + 1,
-           // sensorRangeSD = 1,
            sensorPeakDetectionProbability = 1,
            SDofSensorDetectionRange = 1,
            i = 0,
@@ -89,6 +88,7 @@ int main() {
                    std::stoi(acousticParams["numOptimalSensors"]),
            numProjectedSensors =
                    std::stoi(acousticParams["numProjectedSensors"]),
+           numSensorsToPlace = numOptimalSensors + numProjectedSensors,
            suppressionDiameter = (2 * ceil(sensorDetectionRange * suppressionRangeFactor)) + 1;
     // Set the global border size
     border = sensorDetectionRange;
@@ -191,25 +191,13 @@ int main() {
 
     // Mr. Gaeta, START THE CLOCK!
     vizBegin = clock();
-    std::cout << "\nGetting Goodness...\n";
+    std::cout << "\nGetting Goodness...\nBias: " << bias << "\n";
     // Calculate good sensor locations
     calculateGoodnessGrid(&tGrid, &bGrid, &gGrid, &suppressionReference,
                         &detectionGradient, &distanceGradient, bias,
                         sensorDetectionRange, border, border,
                         rowDist, colDist);
 
-
-    //======================
-    Graph bg = Graph(&bGrid);
-    bg.writeMat();
-    Graph tg = Graph(&tGrid);
-    tg.writeMat();
-    // Check if we should proceed...
-    if (gGrid.data.sum() <= 0) {
-        printError(
-               "No positive coefficients found in the goodness Grid. Aborting",
-               0, acousticParams["timestamp"]);
-    }
     vizEnd = clock();
     goodnessGridComputationTime =
             static_cast<double>(end - begin) / CLOCKS_PER_SEC;
@@ -219,26 +207,39 @@ int main() {
     // Find optimal placements
     std::cout << "\nPlacing Sensors...\n";
     Eigen::MatrixXd bestSensors;
-    bestSensors.resize(numOptimalSensors + numProjectedSensors, 4);
+    bestSensors.resize(numSensorsToPlace, 4);
+
+
+    //============================
+    gGrid.name = "x1";
+    Graph x1Graph = Graph(&gGrid);
+    x1Graph.writeMat();
 
     // Grab the top n sensor r,c locations and recovery rates.
     selectTopSensorLocations(&tGrid, &bGrid, &gGrid, &UGGrid,
                    &bestSensors, &userSensorList, &suppressionReference,
                    &detectionGradient, &distanceGradient,
-                   numOptimalSensors + numProjectedSensors,
+                   numSensorsToPlace,
                    sensorDetectionRange, bias, suppressionRangeFactor,
                    suppressionDiameter, sensorPeakDetectionProbability,
                    SDofSensorDetectionRange, acousticParams["timestamp"]);
 
+    gGrid.name = "x2";
+    Graph x2Graph = Graph(&gGrid);
+    x2Graph.writeMat();
     std::cout << bestSensors << "\n";
 
     std::cout << "Computing Statistics...\n";
     getStats(&UGGrid, &gGrid, &bestSensors, sensorDetectionRange, &networkSparsity,
               &absRecoveryRate, &uniqueRecoveryRate, &cGrid);
 
+    gGrid.name = "x3";
+    Graph x3Graph = Graph(&gGrid);
+    x3Graph.writeMat();
+    gGrid.name = "Goodness";
     // Generate graphs
     std::cout<< "\nWriting Graphs...";
-    Graph gGraph = Graph(&gGrid);
+    Graph gGraph = Graph(&UGGrid);
     Graph tGraph = Graph(&tGrid);
     Graph bGraph = Graph(&bGrid);
     Graph cGraph = Graph(&cGrid);

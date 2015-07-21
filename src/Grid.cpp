@@ -52,7 +52,7 @@ Grid::Grid(Grid* mat, std::string newName) {
     cols = mat->cols;
     data.resize(rows, cols);
     name = newName;
-    data.block(0, 0, rows, cols) = mat->data.block(0, 0, rows, cols);
+    data = mat->data;
 }
 
 /**

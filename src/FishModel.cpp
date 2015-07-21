@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include "GlobalVars.h"
 #include "Grid.h"
+#include "Utility.h"
 
 /**
  * Computes the bivariate normal distribution as a probability density for a
@@ -138,8 +139,8 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
     if (acousticParams.count("minDepth") > 0 &&
         acousticParams.count("maxDepth") > 0) {
         if (debug) {
-            std::cout << "Using Vertical Habitat Restrictions: \nminDepth: " <<
-                acousticParams["minDepth"] << "m\nmaxDepth: " <<
+            std::cout << "Using Vertical Habitat Restrictions: \n\tminDepth: " <<
+                acousticParams["minDepth"] << "m\n\tmaxDepth: " <<
                 acousticParams["maxDepth"] << "m\n";
         }
         Grid* minGrid = new Grid(rows, cols, "min");
@@ -166,5 +167,12 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
     }
     // convert the grid to a probability matrix
     double sum = behaviorGrid -> data.sum();
+    if (sum <= 0) {
+        std::string errorMsg = "Error: The fish model is empty.  This may "
+                   "occur when no cells in your bathymetry fall between the "
+                   "given \'minDepth\' and \'maxDepth\' parameters.\n";
+        printError(errorMsg, 0, acousticParams["timestamp"]);
+    }
+
     behaviorGrid -> data = behaviorGrid -> data / sum;
 }

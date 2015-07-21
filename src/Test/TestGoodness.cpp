@@ -15,7 +15,6 @@ double tolerance = 0.0001;
  * Executes all tests in TestGoodness.cpp.  Returns true if all tests pass, false otherwise.
  */
 bool runGoodnessTests() {
-    debug = false;
 	bool success = (
 			duplicatePoint() &&
 			negativeHorizontal() &&
@@ -150,16 +149,21 @@ bool checkCalculateGoodness() {
 
     for (bias=1; bias<4; bias++) {
         for (fishmodel=0; fishmodel < 2; fishmodel++) {
-            populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy,
+            if (bias != 2) {
+                populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy,
                                   oucor, mux, muy, fishmodel);
+            }
+            else {
+                bGrid.data.setConstant(0);
+                bGrid.data.block(border, border, numRows, numCols).setConstant(1);
+            }
             calculateGoodnessGrid(&tGrid, &bGrid, &gGrid,
                                   &suppressionReference, &detectionGradient,
                                   &distanceGradient, bias,
                                   sensorDetectionRange, sensorDetectionRange,
                                   sensorDetectionRange, numRows, numCols);
-            //gGrid.printData();
             methodID = "checkCalculateGoodness bias:" + std::to_string(bias) + " fishmodel:" + std::to_string(fishmodel);
-            result = result & compareMatrix(&gGrid.data, &sols[(bias-1) * 2 + fishmodel], methodID);
+            result = result & compareMatrix(&sols[(((bias - 1) * 2) + fishmodel)], &gGrid.data, methodID);
         }
     }
     return result;
@@ -232,10 +236,9 @@ bool compareMatrix(Eigen::MatrixXd* expectedMatirx,
     for(i = 0;i < size;i ++) {
         for(j = 0;j < size;j ++) {
             if (delta(i, j) > tolerance) {
-                std::cout << delta (i,j);
-                std::cout << "Error in " << functionName << "\nExpected value: "
-                     << (*expectedMatirx)(i,j) << "\nRecieved value: "
-                     << (*receivedMatrix)(i,j) << " @ " << i << ", " << j
+                std::cout << "Error in " << functionName <<  " @ " << i << ", " << j << " \nExpected value:\n"
+                     << (*expectedMatirx) << "\nRecieved value:\n"
+                     << (*receivedMatrix)
                      <<"\n";
                 return false;
             }
@@ -505,7 +508,7 @@ bool testSelectTopSpots() {
         i=0, bias = 1;
     border = sensorDetectionRange;
     bool result = true;
-    int size = 2 * (sensorDetectionRange + border) + 1;
+    int size = sensorDetectionDiameter + 2 * border;
     Grid* goodnessGrid = new Grid(size, size,"goodness");
     Grid* coverageGrid = new Grid(size, size,"coverage");
     Grid* behaviorGrid = new Grid(size, size, "behavior");
@@ -516,13 +519,14 @@ bool testSelectTopSpots() {
     Eigen::MatrixXd suppressionReference;
     Eigen::MatrixXd bestSensors[3];
     Eigen::MatrixXd userSensors[3];
-    //userSensors[0].resize(2, 0);
-    userSensors[1].resize(2, 2);
-    userSensors[1] << 5, 3,
-                      2, 4;
-    userSensors[2].resize(2, 2);
-    userSensors[2] << 5, 3,
-                      2, 4;
+    // Apparently explicitly resizing userSensors[0] to size 0 will throw an
+    // error.  But simply leaving it uninitialized results in a matrix of size 0x0.
+    userSensors[1].resize(2, 4);
+    userSensors[1] << 2, 1, 0, 0,
+                      0, 2, 0, 0;
+    userSensors[2].resize(2, 4);
+    userSensors[2] << 2, 1, 0, 0,
+                      0, 2, 0, 0;
     Eigen::MatrixXd distanceGradient;
     Eigen::MatrixXd detectionGradient;
     distanceGradient.resize(sensorDetectionDiameter, sensorDetectionDiameter);
@@ -539,23 +543,22 @@ bool testSelectTopSpots() {
     Eigen::MatrixXd solGoodnessGrid[3];
     Eigen::MatrixXd solBestSensors[3];
     for (i = 0;i < 3;i++) {
-        bestSensors[i].resize(numSensorsToPlace, 3);
+        bestSensors[i].resize(numSensorsToPlace, 4);
         bestSensors[i].setConstant(0);
         solGoodnessGrid[i].resize(size, size);
         solGoodnessGrid[i].setConstant(0);
-        solBestSensors[i].resize(numSensorsToPlace, 3);
+        solBestSensors[i].resize(numSensorsToPlace, 4);
         solBestSensors[i].setConstant(0);
     }
+    solBestSensors[0] <<  5, 3, 3, 3,
+                          2, 4, 2, 2,
+                          5, 5, 1.72933, 2;
 
-    solBestSensors[0] <<  5, 3, 3,
-                          2, 4, 2,
-                          5, 5, 1.72933;
-
-    // skip initializing solBestSensors[1] because no optimal sensors are placed
-
-    solBestSensors[2] <<  5, 5,  1.72933,
-                          2, 2,  0.864665,
-                          2, 6,  0.864665;
+    // Skip initializing solBestSensors[1] because no optimal sensors are
+    // placed.
+    solBestSensors[2] <<  5, 5,  1.835833, 2,
+                          5, 3,  1.02066, 3,
+                          2, 6,  0.864665, 1;
 
     solGoodnessGrid[0] <<   0, 0, 0,        0,        0,        0,        0,        0, 0,
                             0, 0, 0,        0,        0,        0,        0,        0, 0,
@@ -567,28 +570,28 @@ bool testSelectTopSpots() {
                             0, 0, 0,        0,        0,        0,        0,        0, 0,
                             0, 0, 0,        0,        0,        0,        0,        0, 0;
 
-    solGoodnessGrid[1] <<   0,       0,       0,        0,        0,        0,        0,        0,       0,
-                            0,       0,       0,        0,        0,        0,        0,        0,       0,
-                            0,       0,       0.864665, 0.393469, 0,        0.393469, 0.864665, 0,       0,
-                            0,       0,       0.842568, 0.546572, 0.361171, 0.620543, 0.917915, 0,       0,
-                            0,       0,       0.620543, 0.361171, 0.546572, 0.842568, 0.981684, 0,       0,
-                            0,       0,       0.393469, 0,        0.393469, 1.72933,  1,        0,       0,
-                            0,       0,       0.632121, 0.393469, 0.632121, 0.917915, 1,        0,       0,
-                            0,       0,       0,        0,        0,        0,        0,        0,       0,
-                            0,       0,       0,        0,        0,        0,        0,        0,       0;
+    solGoodnessGrid[1] <<   0,      0,      0,        0,        0,        0,        0,        0,        0,
+                            0,      0,      0,        0,        0,        0,        0,        0,        0,
+                            0,      0,      0.793689, 0.340219, 0,        0.386263, 0.864665, 0,        0,
+                            0,      0,      0.580233, 0.24872,  0.24872,  0.580233, 0.917915, 0,        0,
+                            0,      0,      0.386263, 0,        0.340219, 0.793689, 0.981684, 0,        0,
+                            0,      0,      0.632121, 1.18041,  0.632121, 1.83583,  1,        0,        0,
+                            0,      0,      0.917915, 0.864665, 0.917915, 0.981684, 1,        0,        0,
+                            0,      0,      0,        0,        0,        0,        0,        0,        0,
+                            0,      0,      0,        0,        0,        0,        0,        0,        0;
 
-
-    solGoodnessGrid[2] <<   0,       0,       0,        0,        0,        0,        0,        0,       0,
-                            0,       0,       0,        0,        0,        0,        0,        0,       0,
-                            0,       0,       0,        0.154818, 0,        0.154818, 0,        0,       0,
-                            0,       0,       0.331525, 0.339172, 0.279332, 0.339172, 0.331525, 0,       0,
-                            0,       0,       0.536562, 0.304311, 0.332959, 0.304311, 0.536562, 0,       0,
-                            0,       0,       0.393469, 0,        0.154818, 0,        0.393469, 0,       0,
-                            0,       0,       0.632121, 0.361171, 0.399576, 0.361171, 0.632121, 0,       0,
-                            0,       0,       0,        0,        0,        0,        0,        0,       0,
-                            0,       0,       0,        0,        0,        0,        0,        0,       0;
+    solGoodnessGrid[2] <<   0,  0,  0,        0,        0,         0,        0,        0,   0,
+                            0,  0,  0,        0,        0,         0,        0,        0,   0,
+                            0,  0,  0.793689, 0.340219, 0,         0.151983, 0,        0,   0,
+                            0,  0,  0.532605, 0.211121, 0.192362,  0.311331, 0.331525, 0,   0,
+                            0,  0,  0.244165, 0,        0.133454,  0.263127, 0.536562, 0,   0,
+                            0,  0,  0.24872,  0,        0.0978637, 0,        0.393469, 0,   0,
+                            0,  0,  0.580233, 0.312292, 0.366777,  0.354556, 0.632121, 0,   0,
+                            0,  0,  0,        0,        0,         0,        0,        0,   0,
+                            0,  0,  0,        0,        0,         0,        0,        0,   0;
 
     // Run Tests
+    acousticParams.insert({ "suppressionMethod", "suppression.quick"});
     for (i = 0; i < 3; i++) {
         if (i == 1) {
             numSensorsToPlace = 0;
@@ -599,7 +602,6 @@ bool testSelectTopSpots() {
         resetGoodnessGrid(goodnessGrid->getDataPointer());
         Grid* perfectGoodnessGrid = new Grid(goodnessGrid, "perfectGoodnessGrid");
         // TODO(GREG) fill in behaviorGrid and test with suppression.exact and suppression.quick
-
         selectTopSensorLocations(topographyGrid, behaviorGrid, goodnessGrid,
                        perfectGoodnessGrid,
                        &bestSensors[i], &userSensors[i],
@@ -611,8 +613,8 @@ bool testSelectTopSpots() {
                        sensorPeakDetectionProbability,
                        SDofSensorDetectionRange, "-1");
         //std::cout<< "i:"<< i <<"\nGoodnessGrid:\n" << goodnessGrid->data <<"\n\n\nbestSensors:\n" <<bestSensors[i]<<"\n\n";
-        result = result & compareMatrix(goodnessGrid->getDataPointer(), &solGoodnessGrid[i], "testSelectTopSpots-GoodnessGrid:" + std::to_string(i));
-        result = result & compareMatrix(&bestSensors[i], &solBestSensors[i], "testSelectTopSpots-BestSensors:" + std::to_string(i));
+        result = result & compareMatrix(&solGoodnessGrid[i], goodnessGrid->getDataPointer(), "testSelectTopSpots-GoodnessGrid:" + std::to_string(i));
+        result = result & compareMatrix(&solBestSensors[i], &bestSensors[i], "testSelectTopSpots-BestSensors:" + std::to_string(i));
     }
     return result;
 }
