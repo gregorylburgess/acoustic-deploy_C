@@ -29,7 +29,7 @@ class Graph {
     Grid* grid;
     explicit Graph(Grid* g);
     void addDataRange(std::stringstream* ss, std::string sensorIconColor,
-                      std::string keyLabel);
+                      bool solidFill, std::string keyLabel);
     void addLabel(std::stringstream* ss,  Eigen::MatrixXd* sensors,
                   std::string sensorLabelColor);
     void enumeratePoints(std::stringstream* ss, Eigen::MatrixXd* sensors,
@@ -40,7 +40,7 @@ class Graph {
                      int iconRadius, std::string keyLabel,
                      std::stringstream* ss, std::string inputMatFile,
                      std::string contourDataFile);
-    void printContour(std::vector<std::string> *contourLevels);
+    void printContourFile(std::vector<std::string> *contourLevels);
     void printContourGraph(int width, int height,
             std::vector <std::string> *contourLevels,
             bool plotSensors, Eigen::MatrixXd* userSensors,

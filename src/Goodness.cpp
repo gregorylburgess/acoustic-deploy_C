@@ -778,8 +778,8 @@ void selectTopSensorLocations(Grid* topographyGrid, Grid* behaviorGrid,
         goodnessGrid->data.maxCoeff(&row, &col);
 
         // Transcribe the row & col locations.
-        (*bestSensors)(i, 0) = row;
-        (*bestSensors)(i, 1) = col;
+        (*bestSensors)(i, 0) = row - border;
+        (*bestSensors)(i, 1) = col - border;
 
         // Record the Unique Recovery Rate
         (*bestSensors)(i, 2) = goodnessGrid->data(row, col);

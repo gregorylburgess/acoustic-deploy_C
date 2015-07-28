@@ -249,7 +249,7 @@ int main() {
         tGraph.writeDat();
         // Print the contour file used by all graphs.
         //     (Do this just once as it takes a loooong time).
-        // tGraph.printContour(contourPtr);
+        tGraph.printContourFile(&contourLevels);
         // Graph the Topography Grid with contour lines.
         bool plotSensors = true;
         tGraph.printContourGraph(width, height, &contourLevels, plotSensors,

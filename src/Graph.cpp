@@ -36,7 +36,7 @@ Graph::Graph(Grid* g) {
  * @param contourLevels A pointer to an array of doubles holding contour
  *          levels (depth as a negative integer).
  */
-void Graph::printContour(std::vector <std::string> *contourLevels) {
+void Graph::printContourFile(std::vector <std::string> *contourLevels) {
     std::cout << "\n\nWriting contour file...\n";
     Gnuplot plots;
     std::stringstream ss;
@@ -96,11 +96,12 @@ void  Graph::printContourGraph(int width, int height,
                                 bool plotSensorIcons,
                                 Eigen::MatrixXd* userSensors,
                                 Eigen::MatrixXd* optimalSensors,
-                                int projectedSensors,
+                                int numProjectedSensors,
                                 bool logScaleGraphColoring) {
     std::cout << "\n\nPrinting " << grid->name << " graph...\n";
     int i = 0,
-        sensorIconRadius = 2;
+        sensorIconRadius = 2,
+        numOptimalSenors = optimalSensors->rows() - numProjectedSensors;
     double  xstart = -.5,
             ystart = -.5;
     std::stringstream ss;
@@ -161,12 +162,11 @@ void  Graph::printContourGraph(int width, int height,
 
     // Plot sensor icons and titles
     if (plotSensorIcons) {
-        int numOfLevels = std::stoi(acousticParams["numContourDepths"]),
-            numOptimalSenors = optimalSensors->rows() - projectedSensors;
+        int numOfLevels = std::stoi(acousticParams["numContourDepths"]);
         Eigen::MatrixXd optimal = optimalSensors->block(0, 0,
                                                   numOptimalSenors, 3);
         Eigen::MatrixXd projected = optimalSensors->block(numOptimalSenors,
-                                                     0, projectedSensors, 3);
+                                                     0, numProjectedSensors, 3);
         // Define labels for sensors
         addLabel(&ss, userSensors, sensorLabelColor);
         addLabel(&ss, &optimal, sensorLabelColor);
@@ -184,19 +184,25 @@ void  Graph::printContourGraph(int width, int height,
         }
         // Add data ranges
         ss << "\n";
-        addDataRange(&ss, userSensorIconColor, "User Sensor");
+        addDataRange(&ss, userSensorIconColor, false, "User Sensor");
         ss << ",\\\n";
-        addDataRange(&ss, optimalSensorIconColor, "Optimal Sensor");
+        addDataRange(&ss, optimalSensorIconColor, false, "Optimal Sensor");
         ss << ",\\\n";
-        addDataRange(&ss, projectedSensorIconColor, "Projected Sensor");
+        addDataRange(&ss, projectedSensorIconColor, false, "Projected Sensor");
         ss << "\n";
         // Enumerate points
-        enumeratePoints(&ss, userSensors, sensorIconRadius);
-        ss << "EOF\n";
-        enumeratePoints(&ss, &optimal, sensorIconRadius);
-        ss << "EOF\n";
-        enumeratePoints(&ss, &projected, sensorIconRadius);
-        ss << "EOF";
+        if (userSensors->rows() > 0) {
+            enumeratePoints(&ss, userSensors, sensorIconRadius);
+            ss << "EOF\n";
+        }
+        if (optimal.rows() > 0) {
+            enumeratePoints(&ss, &optimal, sensorIconRadius);
+            ss << "EOF\n";
+        }
+        if (projected.rows() > 0) {
+            enumeratePoints(&ss, &projected, sensorIconRadius);
+            ss << "EOF";
+        }
      }
 
     // finalize string
@@ -205,6 +211,7 @@ void  Graph::printContourGraph(int width, int height,
     }
 
     plotData = ss.str();
+    std::cout << plotData;
     ss.str("");
     ss.clear();
         try {
@@ -266,10 +273,17 @@ void Graph::addLabel(std::stringstream* ss,  Eigen::MatrixXd* sensors,
  * @param keyLabel A string holding the name of the data range.
  *
  */
-void Graph::addDataRange(std::stringstream* ss, std::string sensorIconColor,
+void Graph::addDataRange(std::stringstream* ss, std::string sensorIconColor, bool solidFill,
                          std::string keyLabel) {
-    *ss << " \'-\' using 1:2:3 with circles lc rgb \"" << sensorIconColor  <<
+    std::string solid = "\"";
+    if (solidFill) {
+        solid = "\" fs solid";
+    }
+    /**ss << " \'-\' using 1:2:3 with circles lc rgb \"" << sensorIconColor  <<
           "\" fs solid title \"" << keyLabel << "\"";
+    */
+    *ss << " \'-\' using 1:2:3 with circles lc rgb \"" << sensorIconColor  <<
+              solid << " title \"" << keyLabel << "\"";
 }
 
 /**
@@ -311,18 +325,18 @@ void Graph::writeMat() {
  */
 void Graph::writeDat() {
     std::ofstream out;
-    int i = 0;
-    int j = 0;
-    int rows = grid->rows - 2 * border;
-    int cols = grid->cols - 2 * border;
-    double val  = 9;
+    int i = 0, j = 0,
+            dblBorder = 2 * border,
+            rows = grid->rows - dblBorder,
+            cols = grid->cols - dblBorder;
+    double val  = 0;
     Eigen::MatrixXd temp;
     temp.resize(rows, cols);
     temp = grid->data;
     out.open(("data/" + grid->name + ".dat").c_str());
     for (i = border; i < rows; i++) {
         for (j = border; j < cols; j++) {
-            val = temp(i, j);
+            val = temp(i, j) - dblBorder;
             // Yes this is backwards.  No it's not an error.  THANKS GPUPlot...
             out << std::setprecision(3) << j-border << " " << i-border <<
                     " " << val << "\r\n";
