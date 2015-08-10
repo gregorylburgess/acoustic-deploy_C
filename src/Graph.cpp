@@ -98,7 +98,7 @@ void  Graph::printContourGraph(int width, int height,
                                 Eigen::MatrixXd* optimalSensors,
                                 int numProjectedSensors,
                                 bool logScaleGraphColoring) {
-    std::cout << "\n\nPrinting " << grid->name << " graph...\n";
+    std::cout << "Printing " << grid->name << " graph...\n";
     int i = 0,
         sensorIconRadius = 2,
         numOptimalSenors = optimalSensors->rows() - numProjectedSensors;
@@ -211,7 +211,6 @@ void  Graph::printContourGraph(int width, int height,
     }
 
     plotData = ss.str();
-    std::cout << plotData;
     ss.str("");
     ss.clear();
         try {

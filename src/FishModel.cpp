@@ -83,13 +83,13 @@ double isNonPos(double x) {
  *      size as the topographyGrid.
  */
 void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
-                          int cellSize, double ousdx, double ousdy,
+                          int bias, int cellSize, double ousdx, double ousdy,
                           double oucor, double mux, double muy,
                           int fishmodel) {
     int rows = topographyGrid -> rows - 2 * border;
     int cols = topographyGrid -> cols - 2 * border;
-
-    if (fishmodel == 0) {  // RW
+    // Random Walk model
+    if (fishmodel == 0 || bias == 2) {
         if (debug) {
             std::cout << "\nUsing RW model\n";
         }
@@ -97,7 +97,8 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
         temp.resize(rows, cols);
         temp.setOnes();
         behaviorGrid -> data.block(border, border, rows, cols) = temp;
-    } else if (fishmodel == 1) {  // OU
+    // Ornstein–Uhlenbeck model
+    } else if (fishmodel == 1) {
         if (debug) {
             std::cout << "\nUsing OU model\n";
         }
@@ -137,7 +138,7 @@ void populateBehaviorGrid(Grid* topographyGrid, Grid* behaviorGrid,
     }
     // Vertical Habitat Restrictions
     if (acousticParams.count("minDepth") > 0 &&
-        acousticParams.count("maxDepth") > 0) {
+        acousticParams.count("maxDepth") > 0 && bias != 2) {
         if (debug) {
             std::cout << "Using Vertical Habitat Restrictions: \n\tminDepth: " <<
                 acousticParams["minDepth"] << "m\n\tmaxDepth: " <<

@@ -9,5 +9,6 @@
 #include <unordered_map>
 #include <string>
 std::unordered_map <std::string, std::string> acousticParams = {};
-int border = 0;
-bool debug = false, silent = true;
+int border = 0,
+    numThreads = 4;
+bool debug = true, silent = true;

@@ -71,11 +71,11 @@ int main() {
 
     int    startRow = 450,
            startCol = 340,  // 450,340,201,201 (1km)netcdf
-           rowDist = 201,   // 100 0 800 1500 (5m)netcdf
-           colDist = 201,   // 300 200 501 501 (palmyra) asc
+           rowDist = 1001,   // 100 0 800 1500 (5m)netcdf
+           colDist = 1001,   // 300 200 501 501 (palmyra) asc
            height = 1000,
            width = 1000,
-           bias = 1,
+           bias = 2,
            sensorDetectionRange = 4,
            sensorDetectionDiameter = 2 * sensorDetectionRange + 1,
            sensorPeakDetectionProbability = 1,
@@ -92,6 +92,8 @@ int main() {
            suppressionDiameter = (2 * ceil(sensorDetectionRange * suppressionRangeFactor)) + 1;
     // Set the global border size
     border = sensorDetectionRange;
+    omp_set_num_threads(numThreads);
+    Eigen::setNbThreads(numThreads);
     clock_t begin, end, vizBegin, vizEnd;
 
 
@@ -165,25 +167,20 @@ int main() {
 
     // Fetch or simulate topography
     std::cout << "Getting topography...";
-    if (bias == 2) {
-        // Bias 2 doesn't care at all about the behavior grid, but still needs
-        // a means of tracking visible fish.  So give it a grid of 1s.
-        bGrid.data.block(border,border, rowDist, colDist).setConstant(1);
+    if (simulateBathy) {
+        // Simulate topography
+        simulatetopographyGrid(&tGrid, rowDist, colDist);
     } else {
-        if (simulateBathy) {
-            // Simulate topography
-            simulatetopographyGrid(&tGrid, rowDist, colDist);
-        } else {
-            // Fetch actual topography
-            getBathy(&tGrid, acousticParams["inputFile"],
-                     acousticParams["inputFileType"], size_t(startRow),
-                     size_t(startCol), size_t(rowDist), size_t(colDist),
-                     acousticParams["seriesName"], acousticParams["timestamp"]);
-        }
+        // Fetch actual topography
+        getBathy(&tGrid, acousticParams["inputFile"],
+                 acousticParams["inputFileType"], size_t(startRow),
+                 size_t(startCol), size_t(rowDist), size_t(colDist),
+                 acousticParams["seriesName"], acousticParams["timestamp"]);
     }
+    std::cout << bGrid.data;
     // Fill in Behavior Grid
     std::cout << "\nGetting Behavior...";
-    populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy, oucor, mux,
+    populateBehaviorGrid(&tGrid, &bGrid, bias, cellSize, ousdx, ousdy, oucor, mux,
                          muy, fishmodel);
 
     // Initalize the Coverage Grid
@@ -197,7 +194,6 @@ int main() {
                         &detectionGradient, &distanceGradient, bias,
                         sensorDetectionRange, border, border,
                         rowDist, colDist);
-
     vizEnd = clock();
     goodnessGridComputationTime =
             static_cast<double>(end - begin) / CLOCKS_PER_SEC;

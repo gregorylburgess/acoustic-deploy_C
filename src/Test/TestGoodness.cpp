@@ -149,14 +149,8 @@ bool checkCalculateGoodness() {
 
     for (bias=1; bias<4; bias++) {
         for (fishmodel=0; fishmodel < 2; fishmodel++) {
-            if (bias != 2) {
-                populateBehaviorGrid(&tGrid, &bGrid, cellSize, ousdx, ousdy,
-                                  oucor, mux, muy, fishmodel);
-            }
-            else {
-                bGrid.data.setConstant(0);
-                bGrid.data.block(border, border, numRows, numCols).setConstant(1);
-            }
+            populateBehaviorGrid(&tGrid, &bGrid, bias, cellSize, ousdx, ousdy,
+                              oucor, mux, muy, fishmodel);
             calculateGoodnessGrid(&tGrid, &bGrid, &gGrid,
                                   &suppressionReference, &detectionGradient,
                                   &distanceGradient, bias,
